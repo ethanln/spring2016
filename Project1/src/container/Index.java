@@ -1,6 +1,7 @@
 package container;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class Index {
@@ -39,6 +40,10 @@ public class Index {
 	
 	public int getNumberOfDocumentsWithWord(){
 		return this.index.size();
+	}
+	
+	public Set<String> getAllCorrelatedDocuments(){
+		return this.index.keySet();
 	}
 	
 	public int getNumberOfKeyWordsInDocument(String docId){
