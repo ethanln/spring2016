@@ -109,36 +109,67 @@ public class Tokenizer {
 		while(reader.hasNext()){
 			String token = reader.next();
 			token = token.toLowerCase();
-
+			
+			if(token.split(":").length > 1 || token.split(";").length > 1 || token.split(".").length > 1){
+				String var = "";
+				var.toString();
+			}
+			//token = token.replaceAll("[^\\P{P}-]+","");
+			token = token.replaceAll("[^-A-Za-z0-9':;]", "");
 			
 			if(this.stopWords.contains(token)){
 				continue;
 			}
 			
-			token = token.replaceAll("[^\\P{P}-]+","");
-			token = token.replaceAll("[^-A-Za-z0-9]", "");
-			
-			if(token.contains("-")){
+			/*if(token.contains("-")){
 				String strippedHyphenStr = token.replaceAll("-", "");
 				if(this.isInDictionary(strippedHyphenStr)){
-					this.termDocument.addKeyTerm(strippedHyphenStr, id);
-					this.documentTerm.addKeyTerm(strippedHyphenStr, id);
-				}
-				else{
-					this.parseLine(new Scanner(token.replaceAll("-", " ")), id);
-				}
-			}
-			else{
-				if(!this.stopWords.contains(token)){
-					String stemmedToken = this.stemmer.stem(token);
+					String stemmedToken = this.stemmer.stem(strippedHyphenStr);
 					if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
 						this.termDocument.addKeyTerm(stemmedToken, id);
 						this.documentTerm.addKeyTerm(stemmedToken, id);
 					}
+					
 				}
+				else{
+					this.parseLine(new Scanner(token.replaceAll("-", " ")), id);
+				}
+			}*/
+			if(this.stripDocumentToken("-", token, id) 
+					|| this.stripDocumentToken("'", token, id)
+					|| this.stripDocumentToken(";", token, id)
+					|| this.stripDocumentToken(":", token, id)){
+				continue;
+			}
+			else{
+				String stemmedToken = this.stemmer.stem(token);
+				if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
+					this.termDocument.addKeyTerm(stemmedToken, id);
+					this.documentTerm.addKeyTerm(stemmedToken, id);
+				}
+				
 			}
 		}
 		reader.close();
+	}
+	
+	private boolean stripDocumentToken(String character, String token, String id){
+		if(token.contains(character)){
+			String strippedHyphenStr = token.replaceAll(character, "");
+			if(this.isInDictionary(strippedHyphenStr)){
+				String stemmedToken = this.stemmer.stem(strippedHyphenStr);
+				if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
+					this.termDocument.addKeyTerm(stemmedToken, id);
+					this.documentTerm.addKeyTerm(stemmedToken, id);
+					return true;
+				}
+			}
+			else{
+				this.parseLine(new Scanner(token.replaceAll(character, " ")), id);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -194,34 +225,59 @@ public class Tokenizer {
 		while(queryReader.hasNext()){
 			String token = queryReader.next();
 			token = token.toLowerCase();
-			
+							
+			//token = token.replaceAll("[^\\P{P}-]+","");
+			token = token.replaceAll("[^-A-Za-z0-9':;]", "");
 			
 			if(this.stopWords.contains(token)){
 				continue;
 			}
 			
-			token = token.replaceAll("[^\\P{P}-]+","");
-			token = token.replaceAll("[^-A-Za-z0-9]", "");
-			
-			if(token.contains("-")){
+			/*if(token.contains("-")){
 				String strippedHyphenStr = token.replaceAll("-", "");
 				if(this.isInDictionary(strippedHyphenStr)){
-					tokens.add(strippedHyphenStr);
-				}
-				else{
-					this.parseQuery(new Scanner(token.replaceAll("-", " ")), tokens);
-				}
-			}
-			else{
-				if(!this.stopWords.contains(token)){
-					String stemmedToken = this.stemmer.stem(token);
+					String stemmedToken = this.stemmer.stem(strippedHyphenStr);
 					if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
 						tokens.add(stemmedToken);
 					}
 				}
+				else{
+					this.parseQuery(new Scanner(token.replaceAll("-", " ")), tokens);
+				}
+			}*/
+
+			if(this.stripQueryToken("-", tokens, token) 
+					|| this.stripQueryToken("'", tokens, token)
+					|| this.stripQueryToken(";", tokens, token)
+					|| this.stripQueryToken(":", tokens, token)){
+				continue;
+			}
+			else{
+					String stemmedToken = this.stemmer.stem(token);
+					if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
+						tokens.add(stemmedToken);
+					}				
 			}
 		}
 		queryReader.close();
+	}
+	
+	private boolean stripQueryToken(String character, ArrayList<String> tokens, String token){
+		if(token.contains(character)){
+			String strippedHyphenStr = token.replaceAll(character, "");
+			if(this.isInDictionary(strippedHyphenStr)){
+				String stemmedToken = this.stemmer.stem(strippedHyphenStr);
+				if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
+					tokens.add(stemmedToken);
+					return true;
+				}
+			}
+			else{
+				this.parseQuery(new Scanner(token.replaceAll(character, " ")), tokens);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 }

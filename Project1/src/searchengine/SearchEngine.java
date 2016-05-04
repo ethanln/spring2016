@@ -25,7 +25,12 @@ public class SearchEngine {
 		this.setupIndexing();
 	}
 	
+	/**
+	 * setup the indexing
+	 * @throws SearchEngineException
+	 */
 	private void setupIndexing() throws SearchEngineException{
+		// recursively load all file documents into the index
 		try{
 			File[] files = new File(uri).listFiles();
 			for(File file : files){
@@ -37,6 +42,9 @@ public class SearchEngine {
 		}
 	}
 	
+	/**
+	 * run the search engine
+	 */
 	public void run(){		
 		Scanner inputListener = new Scanner(System.in);
 		System.out.print("Type in a query: ");
@@ -62,11 +70,15 @@ public class SearchEngine {
 		inputListener.close();
 	}
 	
+	/**
+	 * rank all documents that contain either of the tokens from the query
+	 * @param tokens
+	 */
 	private void rankDocuments(ArrayList<String> tokens){
-		//TreeSet<Document> rankedDocuments = new TreeSet<Document>();
 		TreeMap<String, Double> rankedDocuments = new TreeMap<String, Double>();
 		TreeSet<Document> documents = new TreeSet<Document>();
 		
+		// rank all documents for each query term it contains
 		for(String token : tokens){
 			Iterator<String> docs = this.tokenizer.getDocIds(token);
 			if(docs == null){
@@ -76,7 +88,6 @@ public class SearchEngine {
 				String doc = docs.next();
 				
 				if(doc.equals("114")){
-					// Do we need to implement some incidence term-document to term-term algorithm?
 					System.out.println("Stuff");
 				}
 				double TF = this.TF(token, doc);
@@ -89,29 +100,46 @@ public class SearchEngine {
 				double currentScore = rankedDocuments.get(doc);
 				currentScore += score;
 				rankedDocuments.put(doc, currentScore);
-				
-				//docs.remove();
+		
 			}
 		}
 		
+		// put all ranked documents in ordered set
 		for(String doc : rankedDocuments.keySet()){
 			double count = rankedDocuments.get(doc);
 			documents.add(new Document(doc, count));
 		}
 		
+		// display the results
+		StringBuilder result = new StringBuilder("");
+		int count = 0;
 		for(Document doc : documents){
-			System.out.print("id: " + doc.getDocName() + " \t score: " + doc.getScore() + "\n");
+			if(count == 10){
+				break;
+			}
+			result.append(count + 1 + ". id: " + doc.getDocName() + " ==============> score: " + doc.getScore() + "\n");
+			count++;
 		}
+		System.out.print(result.toString());
 		System.out.print("SIZE: " + rankedDocuments.size() + "\n");
 	}
 
-	
+	/**
+	 * calculate term frequency
+	 * @param word
+	 * @param document
+	 * @return
+	 */
 	private double TF(String word, String document){
 		double frequency = (double)this.tokenizer.getNumberOfKeyWordsInDocument(document, word);
-		// just need to implement this
 		return frequency / (double)this.tokenizer.getHighestFrequencyInDoc(document);
 	}
 	
+	/**
+	 * calculate the IDF 
+	 * @param word
+	 * @return
+	 */
 	private double IDF(String word){
 		double totalDocuments = (double)this.tokenizer.getNumberOfDocuments();
 		double totalDocumentsForWord = (double)this.tokenizer.getNumberOfDocumentsWithWord(word);
