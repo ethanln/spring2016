@@ -1,7 +1,6 @@
 package containers;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import util.Tokenizer;
@@ -9,9 +8,13 @@ import util.Tokenizer;
 public class TrieSQ {
 	
 	private Node root;
+	private long highestFrequency;
+	private long highestModFrequency;
 	
 	public TrieSQ(){
 		this.root = new Node();
+		this.highestFrequency = 0;
+		this.highestModFrequency = 0;
 	}
 	
 	/**
@@ -19,8 +22,8 @@ public class TrieSQ {
 	 * @param query
 	 * @return
 	 */
-	public boolean insert(String query){
-		ArrayList<String> suggestedQueryTerms = (ArrayList)Tokenizer.parseQuery(query);
+	public boolean insert(String query, boolean hasBeenModified){
+		ArrayList<String> suggestedQueryTerms = (ArrayList<String>)Tokenizer.parseQuery(query);
 		Node node = root;
 		for(int i = 0; i < suggestedQueryTerms.size(); i++){
 			
@@ -29,15 +32,42 @@ public class TrieSQ {
 			
 			for(int j = 0; j < termCharacters.length; j++){
 				int index = (termCharacters[j]) - 97;
-				if(node.nodes[index] == null){
-					node.nodes[index] = new Node();
+
+				try{
+					if(node.nodes[index] == null){
+						node.nodes[index] = new Node();
+						node.nodes[index].value = termCharacters[j];
+					}
+				}
+				catch(Exception e){
+					e.printStackTrace();
 				}
 				node = node.nodes[index];
-				node.value = index;
 			}
+			
+			if(node.nodes[26] == null && i < suggestedQueryTerms.size() - 1){
+				node.nodes[26] = new Node();
+				node.nodes[26].value = 32;
+			}
+			
+			if(i < suggestedQueryTerms.size() - 1){
+				node = node.nodes[26];
+			}
+			
 		}
 		
 		node.isComplete = true;
+		node.frequency++;
+		if(node.frequency > this.highestFrequency){
+			this.highestFrequency = node.frequency;
+		}
+		
+		if(hasBeenModified){
+			node.modFrequency++;
+			if(node.modFrequency > this.highestModFrequency){
+				this.highestModFrequency = node.modFrequency;
+			}
+		}
 		
 		return true;
 	}
@@ -50,10 +80,8 @@ public class TrieSQ {
 	 * @return
 	 */
 	public List<StringBuilder> getSuggestedQueries(String query){
-		ArrayList<String> queryTerms = (ArrayList)Tokenizer.parseQuery(query);
+		ArrayList<String> queryTerms = (ArrayList<String>)Tokenizer.parseQuery(query);
 		Node node = root;
-		
-		ArrayList<String> suggestedQueries = new ArrayList<String>();
 
 		for(int i = 0; i < queryTerms.size(); i++){
 			
@@ -62,21 +90,24 @@ public class TrieSQ {
 			
 			for(int j = 0; j < termCharacters.length; j++){
 				int index = (termCharacters[j]) - 97;
+
 				if(node.nodes[index] == null){
 					return new ArrayList<StringBuilder>();
 				}
 				node = node.nodes[index];
 			}
+			
+			if(i < queryTerms.size() - 1){
+				node = node.nodes[26];
+			}
 		}		
 
 		return (ArrayList<StringBuilder>)_getSuggestedQueries(node);
-		
-		//return suggestedQueries;
 	}
 	
 	private ArrayList<StringBuilder> _getSuggestedQueries(Node node){
 		ArrayList<StringBuilder> queries = new ArrayList<StringBuilder>();
-		for(int i = 0; i < 26; i++){
+		for(int i = 0; i < 27; i++){
 			if(node.nodes[i] != null){
 				queries.addAll(getSuggestedQueries(node.nodes[i]));
 			}
@@ -86,23 +117,31 @@ public class TrieSQ {
 	
 	private ArrayList<StringBuilder> getSuggestedQueries(Node node){
 		ArrayList<StringBuilder> queries = new ArrayList<StringBuilder>();
-		for(int i = 0; i < 26; i++){
+		for(int i = 0; i < 27; i++){
 			if(node.nodes[i] != null){
 				queries.addAll(getSuggestedQueries(node.nodes[i]));
 			}
 		}
 		
 		if(node.isComplete){
-			queries.add(new StringBuilder("" + String.valueOf((char)(node.value + 97))));
+			queries.add(new StringBuilder(""));
 		}
-		else{
-			for(int i = 0; i < queries.size(); i++){
-				queries.get(i).insert(0, String.valueOf((char)(node.value + 97)));
-			}
+		
+		// concatenate characters
+		for(int i = 0; i < queries.size(); i++){
+			queries.get(i).insert(0, String.valueOf((char)(node.value)));
 		}
+
 		return queries;
 	}
 
+	public long getHighestFrequency(){
+		return this.highestFrequency;
+	}
+	
+	public long getHighestModFrequency(){
+		return this.highestModFrequency;
+	}
 	
 	private class Node{
 		public boolean isComplete;
@@ -110,10 +149,17 @@ public class TrieSQ {
 		
 		public int value;
 		
+		public int frequency;
+		public int modFrequency;
+		
 		public Node(){
 			this.isComplete = false;
-			this.nodes = new Node[26];
-			this.value = 0;
+			
+			this.nodes = new Node[27];
+			this.value = -1;
+			
+			this.frequency = 0;
+			this.modFrequency = 0;
 		}
 	}
 }

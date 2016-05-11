@@ -1,35 +1,32 @@
 package util;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.TreeSet;
 
 public class Tokenizer {
 	
-	private static final String dictionaryUri = "dictionary.txt";
+	//private static final String dictionaryUri = "dictionary.txt";
 	
 	private static Tokenizer instance;
 	private StopWords stopWords;
-	private PorterStemmer stemmer;
+	//private PorterStemmer stemmer;
 	
-	private TreeSet<String> dictionary;
+	//private TreeSet<String> dictionary;
 	
 	private Tokenizer(){
 		this.stopWords = new StopWords();
-		this.stemmer = new PorterStemmer();
+		//this.stemmer = new PorterStemmer();
 		
-		this.dictionary = new TreeSet<String>();
-		this.setupDictionary();
+		//this.dictionary = new TreeSet<String>();
+		//this.setupDictionary();
 	}
 	
 	/**
 	 * setup the dictionary
 	 * @throws TokenizerException
 	 */
-	private void setupDictionary(){
+	/*private void setupDictionary(){
 		File dictionaryFile = new File(dictionaryUri);
 		Scanner dictionaryReader = null;
 		try {
@@ -45,16 +42,16 @@ public class Tokenizer {
 		finally{
 			dictionaryReader.close();
 		}
-	}
+	}*/
 	
 	/**
 	 * check if word is in the dictionary
 	 * @param word
 	 * @return
 	 */
-	private boolean isInDictionary(String word){
+	/*private boolean isInDictionary(String word){
 		return this.dictionary.contains(word);
-	}
+	}*/
 	
 	private static Tokenizer inst(){
 		if(instance == null){
@@ -69,11 +66,13 @@ public class Tokenizer {
 	
 	private List<String> _parseQuery(String query){
 		ArrayList<String> keyTerms = new ArrayList<String>();
-		this.parseQuery(new Scanner(query), keyTerms);
+		this.parseQuery(new Scanner(query), keyTerms, true);
 		return keyTerms;
 	}
 	
-	private void parseQuery(Scanner queryReader, ArrayList<String> tokens){
+	private void parseQuery(Scanner queryReader, ArrayList<String> tokens, boolean _isFirstToken){
+		boolean isFirstToken = _isFirstToken;
+		
 		while(queryReader.hasNext()){
 			String token = queryReader.next();
 			
@@ -81,31 +80,36 @@ public class Tokenizer {
 			token = token.toLowerCase();
 			
 			// eliminate punctuation
-			token = token.replaceAll("[^-A-Za-z0-9':;]", "");
+			token = token.replaceAll("[^A-Za-z0-9]", "");
 			
-			// eliminate stop words
-			if(this.stopWords.contains(token)){
-				continue;
+			// examine leading stop words
+			if(isFirstToken){
+				isFirstToken = false;
+				// eliminate stop words
+				if(this.stopWords.contains(token)){
+					continue;
+				}
 			}
-
+			tokens.add(token);
 			// strip tokens: hyphens, colons, semi-colons, and apostrophes
-			if(this.stripQueryToken("-", tokens, token) 
-					|| this.stripQueryToken("'", tokens, token)
-					|| this.stripQueryToken(";", tokens, token)
-					|| this.stripQueryToken(":", tokens, token)){
-				continue;
-			}
-			else{
-					String stemmedToken = this.stemmer.stem(token);
-					if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
-						tokens.add(stemmedToken);
-					}				
-			}
+			//if(this.stripQueryToken("-", tokens, token) 
+			//		|| this.stripQueryToken("'", tokens, token)
+			//		|| this.stripQueryToken(";", tokens, token)
+			//		|| this.stripQueryToken(":", tokens, token)){
+			//	continue;
+			//}
+			//else{
+					//String stemmedToken = this.stemmer.stem(token);
+					//if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
+						//tokens.add(stemmedToken);
+				
+					//}				
+			//}
 		}
 		queryReader.close();
 	}
 	
-	private boolean stripQueryToken(String character, ArrayList<String> tokens, String token){
+	/*private boolean stripQueryToken(String character, ArrayList<String> tokens, String token){
 		if(token.contains(character)){
 			String strippedHyphenStr = token.replaceAll(character, "");
 			if(this.isInDictionary(strippedHyphenStr)){
@@ -116,10 +120,10 @@ public class Tokenizer {
 				}
 			}
 			else{
-				this.parseQuery(new Scanner(token.replaceAll(character, " ")), tokens);
+				this.parseQuery(new Scanner(token.replaceAll(character, " ")), tokens, false);
 				return true;
 			}
 		}
 		return false;
-	}
+	}*/
 }
