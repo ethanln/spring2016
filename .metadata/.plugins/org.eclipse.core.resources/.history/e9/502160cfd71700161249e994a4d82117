@@ -1,0 +1,22 @@
+package model;
+
+public class Term {
+	public StringBuilder term;
+	public long modFreq;
+	public long frequency;
+	
+	public Term(StringBuilder _term, long _modFreq, long _frequency){
+		this.term = _term;
+		this.modFreq = _modFreq;
+		this.frequency = _frequency;
+	}
+	
+	public void append(String str){
+		this.term.append(str);
+	}
+	
+	@Override
+	public String toString(){
+		return this.term.toString();
+	}
+}

@@ -1,2 +1,7 @@
-/util/
+/container/
+/exception/
+/model/
 /searchengine/
+/solution/
+/tokenizerTest/
+/util/

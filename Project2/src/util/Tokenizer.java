@@ -10,13 +10,13 @@ public class Tokenizer {
 	
 	private static Tokenizer instance;
 	private StopWords stopWords;
-	//private PorterStemmer stemmer;
+	private PorterStemmer stemmer;
 	
 	//private TreeSet<String> dictionary;
 	
 	private Tokenizer(){
 		this.stopWords = new StopWords();
-		//this.stemmer = new PorterStemmer();
+		this.stemmer = new PorterStemmer();
 		
 		//this.dictionary = new TreeSet<String>();
 		//this.setupDictionary();
@@ -90,7 +90,22 @@ public class Tokenizer {
 					continue;
 				}
 			}
-			tokens.add(token);
+			
+			// should I stem the token????
+			//try{
+				// stem token
+				//String stemmedToken = this.stemmer.stem(token);
+				//if(stemmedToken.equals("Invalid term") || stemmedToken.equals("No term entered")){
+				//	continue;
+				//}
+				
+				//tokens.add(stemmedToken);
+			//}
+			//catch(Exception e){
+				tokens.add(token);
+				//continue;
+			//}
+			
 			// strip tokens: hyphens, colons, semi-colons, and apostrophes
 			//if(this.stripQueryToken("-", tokens, token) 
 			//		|| this.stripQueryToken("'", tokens, token)
