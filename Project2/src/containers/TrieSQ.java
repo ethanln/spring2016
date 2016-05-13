@@ -24,7 +24,10 @@ public class TrieSQ {
 	 * @return
 	 */
 	public boolean insert(String query, boolean hasBeenModified){
-
+		if(query.equals("bible verses") || query.equals("bible verse")){
+			//System.out.print(query);
+		}
+		
 		ArrayList<String> suggestedQueryTerms = (ArrayList<String>)Tokenizer.parseQuery(query);
 		Node node = root;
 		for(int i = 0; i < suggestedQueryTerms.size(); i++){
@@ -99,13 +102,13 @@ public class TrieSQ {
 				node = node.nodes[index];
 			}
 			// Do I want to include a space at the end of a query before looking for suggestions???
-			if(i < queryTerms.size() - 1){
-				node = node.nodes[26];
-			}
-			//if(node.nodes[26] == null){
-			//	return new ArrayList<Term>();
+			//if(i < queryTerms.size() - 1){
+			//	node = node.nodes[26];
 			//}
-			//node = node.nodes[26];
+			if(node.nodes[26] == null){
+				return new ArrayList<Term>();
+			}
+			node = node.nodes[26];
 		}		
 
 		return (ArrayList<Term>)_getSuggestedQueries(node);
@@ -118,6 +121,7 @@ public class TrieSQ {
 				queries.addAll(getSuggestedQueries(node.nodes[i]));
 			}
 		}
+
 		return queries;
 	}
 	

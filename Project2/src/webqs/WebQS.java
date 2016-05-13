@@ -200,51 +200,57 @@ public class WebQS {
 	
 	private void getSQ(String query){
 		ArrayList<Term> suggestedQueries = (ArrayList<Term>)this.trie.getSuggestedQueries(query);
+		
 		if(suggestedQueries.size() > 0){
-			
-			//String query1 = query;
 			String[] query1Tokenized = query.split(" ");
 			
+			// for each suggested query
 			for(int i = 0; i < suggestedQueries.size(); i++){
-				//System.out.print(term.toString() + " " + term.getModFreq() + " " + term.getFrequency() + "\n");
-				//String query2 = query + suggestedQueries.get(i).toString();
+				
+				// tokenize the suggested query
 				String query2 = suggestedQueries.get(i).toString();
 				String[] query2Tokenized = query2.split(" ");
 				
-				if(query1Tokenized.length < query2Tokenized.length){
-					//////
-					String query1TokenStemmed;
-					String query2TokenStemmed;
-					
+				if(query2Tokenized.length > 0){
 					double wcf;
+					String word1Token = query1Tokenized[query1Tokenized.length - 1];
+					String word2Token = query2Tokenized[0];
 					
+					// get the wcf score
 					try{
-						query1TokenStemmed = this.stemmer.stem(query1Tokenized[query1Tokenized.length - 1]);
-						query2TokenStemmed = this.stemmer.stem(query2Tokenized[0]);
+						// stem both words
+						String word1TokenStemmed = this.stemmer.stem(word1Token);
+						String word2TokenStemmed = this.stemmer.stem(word2Token);
 						
-						if(query1TokenStemmed.equals("Invalid term") 
-								|| query1TokenStemmed.equals("No term entered")
-								|| query2TokenStemmed.equals("Invalid term") 
-								|| query2TokenStemmed.equals("No term entered")){
-							wcf = 0.0;
+						// if word1 does not stem properly
+						if(word1TokenStemmed.equals("Invalid term") 
+								|| word1TokenStemmed.equals("No term entered")){
+							word1TokenStemmed = word1Token;
 						}
-						else{
-							wcf = this.WCF(query1TokenStemmed, query2TokenStemmed);
+						
+						// if word2 does not stem properly
+						if(word2TokenStemmed.equals("Invalid term") 
+								|| word2TokenStemmed.equals("No term entered")){
+							word2TokenStemmed = word2Token;
 						}
+						
+						// get wcf score
+						wcf = this.WCF(word1TokenStemmed, word2TokenStemmed);	
 					}
 					catch(Exception e){
-						wcf = 0.0;
+						wcf = this.WCF(word1Token, word2Token);
 					}
-					///////
-					//double wcf = this.WCF(query1TokenStemmed, query2TokenStemmed);
+					
+					// normalize wcf
+					if(wcf > 0){
+						wcf = wcf/0.001;
+					}
+					
+					// get freq score with normalization
 					double freq = (double)suggestedQueries.get(i).getFrequency() / (double)this.trie.getHighestFrequency();
+					// get modfreq score with normalization
 					double mod = (double)suggestedQueries.get(i).getModFreq() / (double)this.trie.getHighestModFrequency();
-					
-					
-					if(freq == 0){
-						System.out.println("what the???");
-					}
-					
+								
 					// calculate score.
 					double min = Math.min(freq, mod);
 					min = Math.min(min, wcf);
@@ -252,9 +258,6 @@ public class WebQS {
 					double score = (wcf + freq + mod) / (1 - min);
 					this.topSuggestedQueries.add(new SuggestedQuery(query + " " + query2, score));
 				}
-				
-				//query1 = query2;
-				//query1Tokenized = query2Tokenized;
 			}
 		}
 	}
@@ -264,18 +267,13 @@ public class WebQS {
 
 			String myURL = "http://peacock.cs.byu.edu/CS453Proj2/?word1="+w1+"&word2="+w2;
 
-			System.out.println("Fetching content: "+myURL);
-
 			Document pageDoc = (Document) Jsoup.connect(myURL).get();
 			String htmlContent = pageDoc.html();		
 			Document contentDoc = Jsoup.parse(htmlContent);
 			String contentVal = contentDoc.body().text();
-			
-			//System.out.println(contentVal);
 
 			Double val= Double.parseDouble(contentVal);
 
-			//System.out.println(val);
 			if(val == -1.0){
 				return 0.0;
 			}
@@ -292,11 +290,10 @@ public class WebQS {
 		int count = 1;
 		for(SuggestedQuery sq : this.topSuggestedQueries){
 			System.out.print(count + ". " + sq.SQ + " =======> " + sq.score + "\n");
-			if(count == 10){
+			if(count == 8){
 				break;
 			}
 			count++;
-			
 		}
 		this.topSuggestedQueries = new TreeSet<SuggestedQuery>();
 	}
