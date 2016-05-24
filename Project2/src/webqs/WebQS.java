@@ -272,6 +272,7 @@ public class WebQS {
 			Document contentDoc = Jsoup.parse(htmlContent);
 			String contentVal = contentDoc.body().text();
 
+			System.out.print(myURL);
 			Double val= Double.parseDouble(contentVal);
 
 			if(val == -1.0){

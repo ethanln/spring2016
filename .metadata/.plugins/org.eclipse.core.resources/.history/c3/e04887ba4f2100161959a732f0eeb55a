@@ -1,0 +1,18 @@
+package test;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+import util.Soundex;
+
+public class SoundexTest {
+
+	@Test
+	public void test() {
+		Soundex soundex = new Soundex();
+		Assert.AssertEquals("M100", soundex.encodeString("movie"));
+		
+	}
+
+}

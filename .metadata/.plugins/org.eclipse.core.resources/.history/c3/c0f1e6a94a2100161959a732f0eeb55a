@@ -1,0 +1,114 @@
+package util;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Map;
+import java.util.TreeMap;
+
+public class Soundex {
+	private final String url = "dictionary.txt";
+	
+	private Map<String, String> codex;
+	
+	public Soundex(){
+		this.codex = new TreeMap<String, String>();
+		this.buildDictionary();
+	}
+	
+	private void buildDictionary(){
+		File dictionaryFile = new File(url);
+		
+		try {
+			BufferedReader wikiReader = new BufferedReader(new FileReader(dictionaryFile));
+			
+			String word;
+			while ((word = wikiReader.readLine()) != null){
+				this.encodeString(word);
+			}
+			wikiReader.close();
+		} 
+		catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+	
+	public void encodeString(String word){
+		if(word == null || word.length() < 1){
+			return;
+		}
+		
+		// rid of all punctuation
+		word = word.replaceAll("[^A-Za-z0-9]", "");
+		
+		// store first letter in code string as uppercase
+		StringBuilder code = new StringBuilder();
+		code.append(word.toUpperCase().charAt(0));
+		
+		// substring the first letter to parse the rest
+		word = word.substring(0, word.length() - 1);
+		
+		// replace certain letters with hyphens
+		word = this.hyphenReplace(word);
+		
+		// replace certain letters with numerical values
+		word = this.numberReplace(word);
+		
+		char[] wordArray = word.toCharArray();
+		
+		for(int i = 0; i < word.length(); i++){
+			
+		}
+	}
+	
+	private String hyphenReplace(String word){
+		word = word.replace('a', '-');
+		word = word.replace('e', '-');
+		word = word.replace('i', '-');
+		word = word.replace('o', '-');
+		word = word.replace('u', '-');
+		word = word.replace('y', '-');
+		word = word.replace('h', '-');
+		word = word.replace('w', '-');
+		
+		return word;
+	}
+	
+	private String numberReplace(String word){
+		/* for numbers of 1 */
+		word = word.replace('b', '1');
+		word = word.replace('f', '1');
+		word = word.replace('p', '1');
+		word = word.replace('v', '1');
+		
+		/* for numbers of 2 */
+		word = word.replace('c', '2');
+		word = word.replace('g', '2');
+		word = word.replace('j', '2');
+		word = word.replace('k', '2');
+		word = word.replace('q', '2');
+		word = word.replace('s', '2');
+		word = word.replace('x', '2');
+		word = word.replace('z', '2');
+		
+		/* for numbers of 3 */
+		word = word.replace('d', '3');
+		word = word.replace('t', '3');
+		
+		/* for numbers of 4 */
+		word = word.replace('l', '4');
+		
+		/* for numbers of 5 */
+		word = word.replace('m', '5');
+		word = word.replace('n', '5');
+		
+		/* for numbers of 6 */
+		word = word.replace('r', '6');
+
+		return word;
+	}
+}

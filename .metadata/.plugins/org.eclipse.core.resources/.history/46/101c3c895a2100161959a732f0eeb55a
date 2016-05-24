@@ -1,0 +1,30 @@
+package searchengine;
+
+import exception.TokenizerException;
+import util.Soundex;
+import util.Tokenizer;
+
+public class SearchEngine {
+		
+	private Soundex soundex;
+	private Tokenizer tokenizer;
+	
+	public SearchEngine(){
+		this.soundex = new Soundex();
+		try {
+			this.tokenizer = new Tokenizer();
+		} 
+		catch (TokenizerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void init(){
+		this.soundex.buildDictionary();
+	}
+	
+	public void run(){
+		
+	}
+}

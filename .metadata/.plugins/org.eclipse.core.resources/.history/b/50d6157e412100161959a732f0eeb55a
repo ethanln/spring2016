@@ -1,0 +1,17 @@
+package util;
+
+import java.util.Map;
+
+public class Soundex {
+	private final String url = "dictionary.txt";
+	
+	private Map<String, String> codex;
+	
+	public Soundex(){
+		this.codex = new TreeMap<String, String>();
+	}
+	
+	private void buildDictionary(){
+		
+	}
+}

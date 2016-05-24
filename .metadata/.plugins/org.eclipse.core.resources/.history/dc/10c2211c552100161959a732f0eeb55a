@@ -1,0 +1,31 @@
+package test;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+import util.Soundex;
+
+public class SoundexTest {
+
+	@Test
+	public void test() {
+		Soundex soundex = new Soundex();
+		assertEquals("M100", soundex.encodeString("movie"));
+		
+		assertEquals("E235", soundex.encodeString("extenssions"));
+		assertEquals("E235", soundex.encodeString("extensions"));
+		
+		assertEquals("M625", soundex.encodeString("marshmellow"));
+		assertEquals("M625", soundex.encodeString("marshmallow"));
+		
+		assertEquals("B655", soundex.encodeString("brimingham"));
+		assertEquals("B655", soundex.encodeString("birmingham"));
+		
+		assertEquals("P560", soundex.encodeString("poiner"));
+		assertEquals("P536", soundex.encodeString("pointer"));
+		
+		
+	}
+
+}
