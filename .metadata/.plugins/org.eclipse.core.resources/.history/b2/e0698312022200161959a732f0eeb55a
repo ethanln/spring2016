@@ -1,0 +1,20 @@
+package noiseychannel;
+
+import java.util.ArrayList;
+
+public class QueryLogWords {
+	private ArrayList<QueryLogWord> queryLogWords;
+	
+	public QueryLogWords(){
+		queryLogWords = new ArrayList<QueryLogWord>();
+	}
+	
+	public ArrayList<QueryLogWord> getQueryLogWords(){
+		return this.queryLogWords;
+	}
+	
+	public class QueryLogWord{
+		public String sessionId;
+		public int pos;
+	}
+}

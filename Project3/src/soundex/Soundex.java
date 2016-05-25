@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -12,9 +13,11 @@ public class Soundex {
 	private final String url = "dictionary.txt";
 	
 	private Map<String, TreeSet<String>> soundex;
+	private Set<String> dictionary;
 	
 	public Soundex(){
 		this.soundex = new TreeMap<String, TreeSet<String>>();
+		this.dictionary = new TreeSet<String>();
 	}
 	
 	/**
@@ -31,6 +34,7 @@ public class Soundex {
 			
 			// parse all words in dictionary
 			while ((word = wikiReader.readLine()) != null){
+				
 				String code = this.encodeString(word);
 				
 				// check if code already exists as key
@@ -38,10 +42,20 @@ public class Soundex {
 					this.soundex.put(code, new TreeSet<String>());
 				}
 				
+				// lowercase all letters
+				word = word.toLowerCase();
+				
+				// rid of all punctuation
+				word = word.replaceAll("[^A-Za-z0-9]", "");
+				
 				// insert word by code key
 				TreeSet<String> temp = this.soundex.get(code);
 				temp.add(word);
 				this.soundex.put(code, temp);
+				
+				// add word to dictionary
+				this.dictionary.add(word);
+				
 			}
 			wikiReader.close();
 		} 
@@ -204,6 +218,10 @@ public class Soundex {
 		return this.soundex.get(code);
 	}
 	
+	
+	public boolean isCorrect(String word){
+		return this.dictionary.contains(word);
+	}
 	/**
 	 * edit distance algorithm
 	 * @param word1

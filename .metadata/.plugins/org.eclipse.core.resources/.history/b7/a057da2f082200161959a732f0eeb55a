@@ -1,0 +1,44 @@
+package noiseychannel;
+
+import java.util.ArrayList;
+
+import util.Tokenizer;
+
+public class NoiseyChannel {
+	private Tokenizer tokenizer;
+	
+	private QueryLogWords queryLogWords;
+	private IncorrectQueryLogWords incorrectQueryLogWords;
+	
+	public NoiseyChannel(Tokenizer _tokenizer){
+		this.tokenizer = _tokenizer;
+		this.queryLogWords = new QueryLogWords();
+		this.incorrectQueryLogWords = new IncorrectQueryLogWords();
+	}
+	
+	public String getSuggestedCorrection(String e, ArrayList<String> S){
+		// W*
+		String suggestedCorrection = "";
+		
+		// score
+		double score = 0.0;
+		
+		for(String W : S){
+			double newScore = this.getPofEinW(e, W) * this.getPofW(W);
+			if(newScore > score){
+				score = newScore;
+				suggestedCorrection = W;
+			}
+		}
+		
+		return suggestedCorrection;
+	}
+	
+	private double getPofEinW(String e, String W){
+		return 0.0;
+	}
+	
+	private double getPofW(String W){
+		return 0.0;
+	}
+}

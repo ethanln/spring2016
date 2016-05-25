@@ -1,0 +1,127 @@
+package searchengine;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+import exception.TokenizerException;
+import soundex.Soundex;
+import util.Tokenizer;
+
+public class SearchEngine {
+		
+	private static final String uri = "wiki" + File.separator + "To_be_posted";
+	
+	private Soundex soundex;
+	private Tokenizer tokenizer;
+	
+	public SearchEngine(){
+		this.soundex = new Soundex();
+		try {
+			this.tokenizer = new Tokenizer();
+		} 
+		catch (TokenizerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void init(){
+		System.out.print("Perparing soundex... \n");
+		this.soundex.buildDictionary();
+		
+		System.out.print("Perparing wiki... \n");
+		
+		// recursively load all file documents into the index
+		try{
+			File[] files = new File(uri).listFiles();
+			for(File file : files){
+				tokenizer.parse(file);
+			}
+		}
+		catch(TokenizerException e){
+			e.printStackTrace();
+		}
+		
+		System.out.print("finished! \n");
+	}
+	
+	public void run(){
+		Scanner inputListener = new Scanner(System.in);
+		System.out.print("Type in a query: ");
+		while(true){
+			try{
+				String query = inputListener.nextLine();
+				
+				System.out.print(query + "\n");
+				
+				if(query.equals("q")){
+					break;
+				}
+				
+				this.spellCorrectQuery(query);
+				System.out.print("\nType another query: ");
+			}
+			catch(Exception e){
+				System.out.print("something screwed up");
+			}
+		}
+		
+		inputListener.close();
+	}
+	
+	private String spellCorrectQuery(String query){
+		
+		ArrayList<String> tokens = new ArrayList<String>();
+		Scanner reader = new Scanner(query);
+		
+		// extract all tokens from query
+		String token;
+		while(reader.hasNext()){
+			token = reader.next();
+			token = token.toLowerCase();
+			token = token.replaceAll("[^A-Za-z0-9]", "");
+			
+			tokens.add(token);
+		}
+		// end token extraction
+		reader.close();
+		
+		// start building the corrected query
+		StringBuilder correctedQuery = new StringBuilder("");
+		
+		for(int i = 0; i < tokens.size(); i++){
+			String correctedWord = tokens.get(i);
+			
+			correctedWord = this.spellCorrectWord(correctedWord);
+			
+			if(i == tokens.size() - 1){
+				correctedQuery.append(correctedWord);
+			}
+			else{
+				correctedQuery.append(correctedWord + " ");
+			}
+		}
+		
+		return correctedQuery.toString();
+	}
+	
+	private String spellCorrectWord(String word){
+		
+		if(this.soundex.isCorrect(word)){
+			return word;
+		}
+		
+		ArrayList<String> suggestedCorrections = new ArrayList<String>();
+		
+		String code = this.soundex.encodeString(word);
+		
+		for(String suggestedCorrection : this.soundex.getWords(code)){
+			if(Soundex.LevenShteinDistance(word, suggestedCorrection) <= 2){
+				suggestedCorrections.add(suggestedCorrection);
+			}
+		}
+		
+		return word;
+	}
+}

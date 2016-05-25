@@ -8,7 +8,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import exception.TokenizerException;
@@ -26,6 +28,9 @@ public class Tokenizer {
 	private PorterStemmer stemmer;
 	private StopWords stopWords;
 	
+	private Map<String, Integer> wordFrequencies;
+	private long totalWords;
+	
 	public Tokenizer() throws TokenizerException{
 		// instantiate dictionary
 		this.dictionary = new TreeSet<String>();
@@ -37,6 +42,9 @@ public class Tokenizer {
 		// instantiate utilities
 		this.stemmer = new PorterStemmer();
 		this.stopWords = new StopWords();
+		
+		this.wordFrequencies = new TreeMap<String, Integer>();
+		this.totalWords = 0;
 		
 		// set up dictionary
 		this.setupDictionary();
@@ -109,11 +117,7 @@ public class Tokenizer {
 		while(reader.hasNext()){
 			String token = reader.next();
 			token = token.toLowerCase();
-			
-			if(token.split(":").length > 1 || token.split(";").length > 1 || token.split(".").length > 1){
-				String var = "";
-				var.toString();
-			}
+
 			//token = token.replaceAll("[^\\P{P}-]+","");
 			token = token.replaceAll("[^-A-Za-z0-9':;]", "");
 			
@@ -128,6 +132,9 @@ public class Tokenizer {
 				continue;
 			}
 			else{
+				// add word frequency
+				this.addWordFrequency(token);
+				
 				String stemmedToken = this.stemmer.stem(token);
 				if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
 					this.termDocument.addKeyTerm(stemmedToken, id);
@@ -143,6 +150,10 @@ public class Tokenizer {
 		if(token.contains(character)){
 			String strippedHyphenStr = token.replaceAll(character, "");
 			if(this.isInDictionary(strippedHyphenStr)){
+				
+				// add word frequency
+				this.addWordFrequency(strippedHyphenStr);
+				
 				String stemmedToken = this.stemmer.stem(strippedHyphenStr);
 				if(!stemmedToken.equals("Invalid term") && !stemmedToken.equals("No term entered")){
 					this.termDocument.addKeyTerm(stemmedToken, id);
@@ -156,6 +167,19 @@ public class Tokenizer {
 			}
 		}
 		return false;
+	}
+	
+	private void addWordFrequency(String word){
+		// update frequencies
+		if(!this.wordFrequencies.containsKey(word)){
+			this.wordFrequencies.put(word, 0);
+		}
+		int count = this.wordFrequencies.get(word);
+		count++;
+		this.wordFrequencies.put(word, count);
+		
+		// update total words count;
+		this.totalWords++;
 	}
 	
 	/**
@@ -182,6 +206,17 @@ public class Tokenizer {
 	
 	public int getNumberOfKeyWordsInDocument(String docId, String word){
 		return this.termDocument.getNumberOfKeyWordsInDocument(word, docId);
+	}
+	
+	public int getWordCollectionFrequency(String word){
+		if(this.wordFrequencies.containsKey(word)){
+			return this.wordFrequencies.get(word);
+		}
+		return 0;
+	}
+	
+	public long getCollectionFrequency(){
+		return this.totalWords;
 	}
 	
 	/**
