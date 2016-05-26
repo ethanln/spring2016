@@ -1,0 +1,27 @@
+package util;
+
+import java.util.ArrayList;
+import java.util.Map;
+
+public class SnippetGenerator {
+	
+	private static SnippetGenerator inst;
+	
+	private SnippetGenerator(){}
+	
+	private static SnippetGenerator instance(){
+		if(inst == null){
+			inst = new SnippetGenerator();
+		}
+		return inst;
+	}
+	
+	public static Map<String, String> generateSnippet(ArrayList<String> fileNames){
+		return inst._generateSnippet(fileNames);
+	}
+	
+	private Map<String, String> _generateSnippet(ArrayList<String> fileNames){
+		
+		return null;
+	}
+}

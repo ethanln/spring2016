@@ -33,6 +33,9 @@ public class NoiseyChannel {
 		this.incorrectQueryLogWords = new TreeMap<String, IncorrectQueryLogWords>();
 	}
 	
+	/**
+	 * set up noisey channel model with query logs
+	 */
 	public void setup(){
 		File file = new File(url);
 		try {
@@ -67,7 +70,7 @@ public class NoiseyChannel {
 		int pos = 1;
 		while(reader.hasNext()){
 			String word = reader.next();
-			word = word.toLowerCase();
+			//word = word.toLowerCase();
 			word = word.replaceAll("[^A-Za-z0-9]", "");
 			
 			// add in incorrect log words in sessionId based key data structure.
@@ -93,6 +96,12 @@ public class NoiseyChannel {
 		reader.close();
 	}
 	
+	/**
+	 * get suggested correction
+	 * @param e
+	 * @param S
+	 * @return
+	 */
 	public String getSuggestedCorrection(String e, ArrayList<String> S){
 		// W*
 		String suggestedCorrection = "";
@@ -100,6 +109,7 @@ public class NoiseyChannel {
 		// score
 		double score = 0.0;
 		
+		// for each suggestion W in S
 		for(String W : S){
 			double newScore = this.getPofEinW(e, W) * this.getPofW(W);
 			if(newScore > score){
@@ -111,16 +121,29 @@ public class NoiseyChannel {
 		return suggestedCorrection;
 	}
 	
+	/**
+	 * P(E|W) error model, where E as been corrected to W
+	 * @param e
+	 * @param W
+	 * @return
+	 */
 	private double getPofEinW(String e, String W){
 		// check if e and W are in the query logs, or if e has every been corrected to W
 		if(!this.queryLogWords.containsKey(e) ||
 				!this.queryLogWords.containsKey(W)){
 			return 0.0;
 		}
+		
+		// get all frequency occurences for error word e
 		ArrayList<QueryLogWord> eWords = this.queryLogWords.get(e).getQueryLogWords();
+		
+		// get all frequency occurences for correct word w
 		ArrayList<QueryLogWord> wWords = this.queryLogWords.get(W).getQueryLogWords();
+		
+		// value for the numerator of P(E|W)
 		int countNumerator = 0;
 		
+		// get count of how many times word e has been corrected to W
 		for(QueryLogWord eWord : eWords){
 			for(QueryLogWord wWord : wWords){
 				if(eWord.sessionId.equals(wWord.sessionId)
@@ -130,7 +153,10 @@ public class NoiseyChannel {
 			}
 		}
 		
+		// value for denominator of P(E|W)
 		int countDenominator = 0;
+		
+		// get count of how many times any word as been corrected to W
 		for(QueryLogWord wWord : wWords){
 			// check to see if the session id of W exists in the incorrect query log words
 			if(!this.incorrectQueryLogWords.containsKey(wWord.sessionId)){
@@ -143,9 +169,15 @@ public class NoiseyChannel {
 				}
 			}
 		}
+		// return value of P(E|W)
 		return (double)countNumerator / (double)countDenominator;
 	}
 	
+	/**
+	 * P(W) language model, The total amount of occurrences of W over the total word frequency in corpus
+	 * @param W
+	 * @return
+	 */
 	private double getPofW(String W){
 		return (double)tokenizer.getWordCollectionFrequency(W) / (double)tokenizer.getCollectionFrequency();
 	}

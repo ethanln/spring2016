@@ -1,0 +1,11 @@
+package util;
+
+import java.util.ArrayList;
+
+public class SnippetGenerator {
+	public SnippetGenerator(){}
+	
+	public void generateSnippet(ArrayList<String> fileNames){
+		
+	}
+}

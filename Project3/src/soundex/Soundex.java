@@ -76,6 +76,7 @@ public class Soundex {
 		if(word == null || word.length() < 1){
 			return word;
 		}
+
 		// lowercase all letters
 		word = word.toLowerCase();
 		
@@ -86,9 +87,6 @@ public class Soundex {
 		StringBuilder code = new StringBuilder();
 		code.append(word.toUpperCase().charAt(0));
 		
-		// substring the first letter to parse the rest
-		word = word.substring(1, word.length());
-		
 		// 2) Replace these letters with hyphens
 		word = this.hyphenReplace(word);
 		
@@ -97,6 +95,9 @@ public class Soundex {
 		
 		// 4) remove adjacent repeats of a numbers
 		word = this.deleteAdjacentNumbers(word);
+		
+		// substring the first letter to parse the rest
+		word = word.substring(1, word.length());
 		
 		// 5) delete hyphens
 		word = word.replace("-", "");
@@ -199,10 +200,10 @@ public class Soundex {
 			if(prev == wordArray[i] 
 					&& Character.isDigit(prev) 
 					&& Character.isDigit(wordArray[i])){
-				prev = wordArray[i];
+				
 				continue;
 			}
-			
+			prev = wordArray[i];
 			formattedWord.append(wordArray[i]);
 		}
 		
@@ -232,16 +233,16 @@ public class Soundex {
 		int[][] table = new int[word1.length() + 1][word2.length() + 1];
 		int cost; 
 		
-		for(int i = 0; i < word1.length(); i++){
+		for(int i = 0; i < word1.length() + 1; i++){
 			table[i][0] = i;
 		}
 		
-		for(int j = 0; j < word2.length(); j++){
+		for(int j = 0; j < word2.length() + 1; j++){
 			table[0][j] = j;
 		}
 		
-		for(int i = 1; i < word1.length(); i++){
-			for(int j = 1; j < word2.length(); j++){
+		for(int i = 1; i < word1.length() + 1; i++){
+			for(int j = 1; j < word2.length() + 1; j++){
 				cost = word1.charAt(i - 1) == word2.charAt(j - 1) ? 0 : 1;
 				
 				table[i][j] = Math.min(table[i - 1][j] + 1, table[i][j - 1] + 1);
@@ -249,6 +250,6 @@ public class Soundex {
 			}
 		}
 		
-		return table[word1.length() - 1][word2.length() - 1];
+		return table[word1.length()][word2.length()];
 	}
 }

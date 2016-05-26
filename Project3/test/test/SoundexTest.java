@@ -11,6 +11,7 @@ public class SoundexTest {
 	@Test
 	public void testSoundex() {
 		Soundex soundex = new Soundex();
+		assertEquals("S655", soundex.encodeString("screening"));
 		assertEquals("M100", soundex.encodeString("movie"));
 		
 		assertEquals("E235", soundex.encodeString("extenssions"));
@@ -24,6 +25,10 @@ public class SoundexTest {
 		
 		assertEquals("P560", soundex.encodeString("poiner"));
 		assertEquals("P536", soundex.encodeString("pointer"));
+		
+		assertEquals("M100", soundex.encodeString("moff"));
+		
+		
 	}
 
 	@Test

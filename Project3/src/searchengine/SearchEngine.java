@@ -2,11 +2,18 @@ package searchengine;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import exception.TokenizerException;
+import models.Document;
+import models.Result;
 import noiseychannel.NoiseyChannel;
 import soundex.Soundex;
+import util.SnippetGenerator;
 import util.Tokenizer;
 
 public class SearchEngine {
@@ -16,6 +23,8 @@ public class SearchEngine {
 	private Soundex soundex;
 	private Tokenizer tokenizer;
 	private NoiseyChannel noiseyChannelModel;
+	
+	private Result result;
 	
 	public SearchEngine(){
 		this.soundex = new Soundex();
@@ -56,17 +65,35 @@ public class SearchEngine {
 		Scanner inputListener = new Scanner(System.in);
 		System.out.print("Type in a query: ");
 		while(true){
+			this.result = new Result();
 			try{
 				String query = inputListener.nextLine();
 				
-				System.out.print(query + "\n");
+				System.out.print("Query: " + query + "\n");
 				
 				if(query.equals("q")){
 					break;
 				}
 				
+				// get corrected query
 				String correctedQuery = this.spellCorrectQuery(query);
-				// WORK HERE TODO:
+				System.out.print("Corrected Query: " + correctedQuery + "\n");
+				
+				// parse query
+				ArrayList<String> tokens = this.tokenizer.parseQuery(correctedQuery);
+				ArrayList<String> fileNames = this.rankDocuments(tokens);
+				
+				// get snippets
+				Map<String, String> snippets = SnippetGenerator.generateSnippet(fileNames);
+				
+				//update result
+				this.result.originalQuery = query;
+				this.result.correctedQuery = correctedQuery;
+				this.result.snippets = snippets;
+				
+				System.out.print(this.result.toString());
+				System.out.print("\n ");
+				System.out.print("\n ");
 				System.out.print("\nType another query: ");
 			}
 			catch(Exception e){
@@ -111,7 +138,6 @@ public class SearchEngine {
 			}
 		}
 		
-		// CHECK AND SEE WHY movi gives different suggestions
 		return correctedQuery.toString();
 	}
 	
@@ -138,6 +164,88 @@ public class SearchEngine {
 		// do noisey channel model function right here where 
 		String correctedWord = this.noiseyChannelModel.getSuggestedCorrection(e, S);
 		
+		//update result
+		this.result.soundexCodes.add(code);
+		this.result.suggestedCorrections.addAll(S);
+		
 		return correctedWord;
+	}
+	
+	/**
+	 * rank all documents that contain either of the tokens from the query
+	 * @param tokens
+	 */
+	private ArrayList<String> rankDocuments(ArrayList<String> tokens){
+		TreeMap<String, Double> rankedDocuments = new TreeMap<String, Double>();
+		TreeSet<Document> documents = new TreeSet<Document>();
+		
+		// rank all documents for each query term it contains
+		for(String token : tokens){
+			Iterator<String> docs = this.tokenizer.getDocIds(token);
+			if(docs == null){
+				continue;
+			}
+			while(docs.hasNext()){
+				String doc = docs.next();
+
+				double TF = this.TF(token, doc);
+				double IDF = this.IDF(token);
+				double score = TF * IDF;
+				
+				if(!rankedDocuments.containsKey(doc)){
+					rankedDocuments.put(doc, 0.0);
+				}
+				double currentScore = rankedDocuments.get(doc);
+				currentScore += score;
+				rankedDocuments.put(doc, currentScore);
+		
+			}
+		}
+		
+		// put all ranked documents in ordered set
+		for(String doc : rankedDocuments.keySet()){
+			double count = rankedDocuments.get(doc);
+			documents.add(new Document(doc, count));
+		}
+		
+		// display the results
+		StringBuilder result = new StringBuilder("");
+		ArrayList<String> docNames = new ArrayList<String>();
+		int count = 0;
+		for(Document doc : documents){
+			if(count == 5){
+				break;
+			}
+			result.append(count + 1 + ". id: " + doc.getDocName() + " ==============> score: " + doc.getScore() + "\n");
+			count++;
+			docNames.add("Doc (" + doc.getDocName() + ").txt");
+		}
+		System.out.print(result.toString());
+		System.out.print("SIZE: " + rankedDocuments.size() + "\n");
+		
+		return docNames;
+	}
+
+	/**
+	 * calculate term frequency
+	 * @param word
+	 * @param document
+	 * @return
+	 */
+	private double TF(String word, String document){
+		double frequency = (double)this.tokenizer.getNumberOfKeyWordsInDocument(document, word);
+		return frequency / (double)this.tokenizer.getHighestFrequencyInDoc(document);
+	}
+	
+	/**
+	 * calculate the IDF 
+	 * @param word
+	 * @return
+	 */
+	private double IDF(String word){
+		double totalDocuments = (double)this.tokenizer.getNumberOfDocuments();
+		double totalDocumentsForWord = (double)this.tokenizer.getNumberOfDocumentsWithWord(word);
+		double amount = (double)Math.log(totalDocuments / totalDocumentsForWord) / Math.log(2.0);
+		return amount;
 	}
 }
