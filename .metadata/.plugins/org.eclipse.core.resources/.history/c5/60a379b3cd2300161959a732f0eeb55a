@@ -1,0 +1,47 @@
+package models;
+
+public class Sentence {
+	
+	// raw sentence
+	public String sentence;
+	
+	// v) is first sentence
+	public boolean isFirst;
+	
+	// v) is second sentence
+	public boolean isSecond;
+	
+	// i) density measure of query words (significance factor
+	public double densityMeasure;
+	
+	// ii) the longest contiguous run of query words in the sentence
+	public double longestContiguousRunOfQueryTerms;
+	
+	// iii) the number of unique query terms in sentence
+	public int numberOfUniqueQueryTerms;
+	
+	// iv) total number of query terms occurring in the sentence
+	public int totalNumberOfQueryTerms;
+	
+	public Sentence(String _sentence){
+		this.sentence = _sentence;
+		
+		this.isFirst = false;
+		this.isSecond = false;
+		
+		this.densityMeasure = 0.0;
+		this.longestContiguousRunOfQueryTerms = 0.0;
+		this.numberOfUniqueQueryTerms = 0;
+		this.totalNumberOfQueryTerms = 0;
+	}	
+	
+	public double calculateScore(){
+		double score = 0.0;
+		
+		score += this.isFirst ? 2.0 : 0.0;
+		score += this.isSecond ? 1.0 : 0.0;
+		
+		score += this.densityMeasure;
+		score += this.longestContiguousRunOfQueryTerms;
+	}
+}

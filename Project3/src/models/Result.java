@@ -39,12 +39,12 @@ public class Result {
 		builder.append("\n");
 		
 		for(String docId : this.snippets.keySet()){
-			builder.append("Doc: " + docId);
-			builder.append("/n");
-			builder.append("/n");
+			builder.append(docId);
+			builder.append("\n");
+			builder.append("\n");
 			builder.append(this.snippets.get(docId));
-			builder.append("/n");
-			builder.append("/n");
+			builder.append("\n");
+			builder.append("\n");
 		}
 		return builder.toString();	
 	}
