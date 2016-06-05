@@ -206,7 +206,7 @@ public class SnippetGenerator {
 				count++;
 			}
 		}
-		return count;
+		return count / words.size();
 	}
 	
 	/**
@@ -228,7 +228,7 @@ public class SnippetGenerator {
 				count++;
 			}
 		}
-		return count;
+		return count / words.size();
 	}
 	
 	private String evaluateSentenceScores(ArrayList<Sentence> sentences){

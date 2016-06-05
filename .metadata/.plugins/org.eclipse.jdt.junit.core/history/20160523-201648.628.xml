@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><testrun name="SoundexTest" project="Project3" tests="2" started="1" failures="0" errors="0" ignored="0">
-  <testsuite name="test.SoundexTest" incomplete="true">
-    <testcase name="testEditDistance" classname="test.SoundexTest" incomplete="true"/>
-    <testcase name="testSoundex" classname="test.SoundexTest" incomplete="true"/>
-  </testsuite>
-</testrun>

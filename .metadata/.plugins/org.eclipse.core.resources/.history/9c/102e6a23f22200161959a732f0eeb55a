@@ -1,9 +1,0 @@
-package util;
-
-public class SnippetGenerator {
-	public SnippetGenerator(){}
-	
-	public void generateSnippet(ArrayList<String> fileNames){
-		
-	}
-}

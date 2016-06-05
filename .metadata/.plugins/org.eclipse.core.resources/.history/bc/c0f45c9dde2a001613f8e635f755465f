@@ -1,0 +1,356 @@
+package mnb;
+
+import java.io.File;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+public class DC {
+
+	// Map<Class, PartitionedDC>
+	Map<String, PartitionedDC> partitionedDCs;
+
+	// holds on dinstinct instances of terms in the corpus
+	Set<String> vocab;
+
+	private final String rootDir = "root" + File.separator;
+
+	public DC(){
+		this.partitionedDCs = new TreeMap<String, PartitionedDC>();
+		this.vocab = new TreeSet<String>();
+		this.init();
+	}
+
+	/**
+	* returns set of classes in the corpus
+	*/
+	public Set<String> getClasses(){
+		return this.partitionedDCs.keySet();
+	}
+
+	/**
+	* returns set of vocab in the corpus
+	*/
+	public Set<String> getVocab(){
+		return this.vocab;
+	}
+
+	/**
+	* parses through all files for each folder
+	* 1) extract folder name as class name for each folder
+	* 2) extract document name as document Id for each document in the folder
+	* 3) strip all emails in document
+	* 4) split document with "\n\n"
+	* 5) strip out the header of the document
+	* 6) pass document file to be parsed
+	*/
+	public void init(){
+		/* IMPLEMENT*/
+		/*
+			For each folder in folders:
+				String className = folder.name;
+				this.addClass(className);
+
+				for each document in folder:
+
+					String docId = document.name;
+					this.addDocument(docId);
+
+					document.stripEmails
+					document.split("\n\n");
+					document.stripHeader;
+					
+					this.parseDoc(document, className, docId);
+					
+
+		*/
+	}
+
+	/**
+	* parses through document
+	* 1) loop through each line of the document
+	* 2) loop through each term of the line of the document
+	* 3) take out punctation in term
+	* 4) check if term is stop word, if it is, ignore the word
+	* 5) stem the term
+	* 6) add the Term to the partitioned documents
+	*/
+	private void parseDoc(File doc, String className, String docId){
+		/* IMPLEMENT*/
+
+		/*
+			for each line in doc:
+				for each term in line:
+					term.stripPunctuation;
+					if(term.isStopWord):
+						continue;
+					term.stem;
+					if(term is valid from stemmer):
+						this.addTerm(className, docId, term);
+		*/
+	}
+
+	/**
+	* adds a term to the DC_Training and DC_Test set with a specified document id
+	*/
+	private void addTerm(String className, String docId, String term){
+		PartitionedDC partitionedDC = PartionedDC partitionedDC = this.partitionedDCs.get(className);
+		partitionedDC.addTerm(docId, term);
+		this.partitionedDCs.put(className, partitionedDC)
+
+		// include term in corpus terms
+		this.vocab.add(term);
+	}
+
+	/**
+	* adds a document to the DC_Training and DC_Test set with specified class name
+	*/
+	private void addDocument(String docId, String className){
+		PartionedDC partitionedDC = this.partitionedDCs.get(className);
+		partitionedDC.addDocument(docId);
+		this.partitionedDCs.put(className, partitionedDC);
+	}
+
+	/**
+	* add class to the DC
+	*/
+	private void addClass(String className){
+		this.partitionedDCs.put(className, new PartitionedDC())
+	}
+
+	/** METRICS METHODS **/
+
+	/**
+	* number of documents in DC_training in which w is absent that are labeled as c
+	*/
+	public int getNumberOfDocsInDC_TrainingWithout_W_Labeled_C(String className, String term){
+		return this.partitionedDCs.get(className).getNumberOfDocsInDC_TrainingClassWithout_W(term);
+	}
+
+	/**
+	* number of documents in DC_training in which w occurs that are labeled as c
+	*/
+	public int getNumberOfDocsInDC_TrainingWith_W_Labeled_C(String className, String term){
+		return this.partitionedDCs.get(className).getNumberOfDocsInDC_TrainingClassWith_W(term);
+	}
+
+	/**
+	* number of documents in DC_training labeled as c
+	*/
+	public int getNumberOfDocumentsInDC_TrainingLabeled_C(String className){
+		return this.partitionedDCs.get(className).getNumberOfDocsInDC_TrainingClass();
+	}
+
+	/**
+	* number of documents in DC_training in which w is absent
+	* Total Number of documents in DC_training in which w is absent
+	*/
+	public int getNumberOfDocumentsInDC_TrainingWithout_W(String term){
+		int count = 0;
+		for(String key : this.partitionedDCs.keySet()){
+			count += this.partitionedDCs.get(key).getNumberOfDocsInDC_TrainingClassWithout_W(term);
+		}
+		return count;
+	}
+
+	/**
+	* number of documents in DC_training in which w occurs
+	* Total number of documents in DC_training in which w occurs
+	*/
+	public int getNumberOfDocumentsInDC_TrainingWith_W(String term){
+		int count = 0;
+		for(String key : this.partitionedDCs.keySet()){
+			count += this.partitionedDCs.get(key).getNumberOfDocsInDC_TrainingClassWith_W(term);
+		}
+		return count;
+	}
+
+	/**
+	* Total Number of documents in DC_training
+	*/
+	public int getTotalNumberOfDocumentsInDC_Training(){
+		int count = 0;
+		for(String key : this.partitionedDCs.keySet()){
+			count += this.partitionedDCs.get(key).getNumberOfDocsInDC_TrainingClass();
+		}
+		return count;
+	}
+
+
+
+	/**
+	* CLASS PARTITIONED DC
+	* This class includes the DC_Training Set and DC_TestSet, which are divided 80% and 20%
+	*/
+	private class PartitionedDC{
+
+		// Map<DocId, Map<Term, Count>>
+		private Map<String, Map<String, Integer>> DC_TrainingSet; 
+		// Map<DocId, Map<Term, Count>>
+		private Map<String, Map<String, Integer>> DC_TestSet; 
+
+		//Map<Term, Set<DocId>> keeps track of how many documents include the term W.
+		private Map<String, Set<String>> keyTermsDocCount;
+
+		public PartitionedDC(){
+			this.DC_TrainingSet = new TreeMap<String, Map<String, Integer>>();
+			this.DC_TestSet = new TreeMap<String, Map<String, Integer>>();
+			this.keyTermsDocCount = new TreeMap<String, Set<String>>();
+		}
+
+		/**
+		* Check to see if the document id is included in the test set or training set
+		* if in test set, include the term in the DC_TestSet, else include in the DC_TrainingSet
+		*/
+		public void addTerm(String docId, String term){
+			if(this.DC_TrainingSet.containsKey(docId)){
+				this.addTermToTrainingSet(docId, term);
+			}
+			else if(this.DC_TestSet.containsKey(docId)){
+				this.addTermToTestSet(docId, term);
+			}
+		}
+
+		/**
+		* Add a term to the training set by document id
+		* also include the document id in the key term set, which is used to keep track of how many documents contain the word w
+		*/
+		private void addTermToTrainingSet(String docId, String term){
+			Map<String, Integer> keyTerms = this.DC_TrainingSet.get(docId);
+
+			if(!keyTerms.containsKey(term)){
+				keyTerms.put(term, 0);
+			}
+
+			// increment count
+			int count = keyTerms.get(term);
+			count++;
+			keyTerms.put(term, count);
+
+			// put set back in DC training set
+			this.DC_TrainingSet.put(docId, keyTerms);
+
+			// update DC_TrainingSet KeyTerm to Document count
+			this.updateKeyTermsDocCount(docId, term);
+		}
+
+		/**
+		* updates the the document count that contains the term w
+		*/
+		private void updateKeyTermsDocCount(String docId, String term){
+			
+			if(!this.keyTermsDocCount.containsKey(term)){
+				this.keyTermsDocCount.put(term, new TreeSet<String>());
+			}
+
+			Set<String> docSet = this.keyTermsDocCount.get(term);
+			docSet.add(docId);
+			this.keyTermsDocCount.put(term, docSet);
+		}
+
+		/**
+		* Add a term to the test set by document id
+		*/
+		private void addTermToTestSet(String docId, String term){
+			Map<String, Integer> keyTerms = this.DC_TestSet.get(docId);
+
+			if(!keyTerms.containsKey(term)){
+				keyTerms.put(term, 0);
+			}
+
+			// increment count
+			int count = keyTerms.get(term);
+			count++;
+			keyTerms.put(term, count);
+
+			// put set back in DC training set
+			this.DC_TestSet.put(docId, keyTerms);
+		}
+
+		/**
+		* First choose a random number between 1 and 10, if the number is less than 9, include the document in the training set
+		* otherwise include it in the test set.
+		*/
+		public void addDocument(String docId){
+			if(randInt(1, 10) < 9){
+				this.addDocToTrainingSet(docId);
+			}
+			else{
+				this.addDocToTestSet(docId);
+			}
+		}
+
+		/**
+		* Checks to see if the number of documents in training set is greater than or equal to 800, if so add the document to the Test Set, 
+		* otherwise, add it to the training set.
+		*/
+		private void addDocToTrainingSet(String docId){
+			if(this.DC_TrainingSet.size() >= 800){
+				this.DC_TestSet.put(docId, new TreeMap<String, Integer>());
+			}
+			else{
+				this.DC_TrainingSet.put(docId, new TreeMap<String, Integer>());
+			}
+		}
+
+		/**
+		* Checks to see if the number of documents in test set is greater than or equal to 200, if so add the document to the Training Set, 
+		* otherwise, add it to the test set.
+		*/
+		private void addDocToTestSet(String docId){
+			if(this.DC_TestSet.size() >= 200){
+				this.DC_TrainingSet.put(docId, new TreeMap<String, Integer>());
+			}
+			else{
+				this.DC_TestSet.put(docId, new TreeMap<String, Integer>());
+			}
+		}
+
+		/**
+		 * Returns a psuedo-random number between min and max, inclusive.
+		 * The difference between min and max can be at most
+		 * <code>Integer.MAX_VALUE - 1</code>.
+		 *
+		 * @param min Minimim value
+		 * @param max Maximim value.  Must be greater than min.
+		 * @return Integer between min and max, inclusive.
+		 * @see java.util.Random#nextInt(int)
+		 */
+		public int randInt(int min, int max) {
+
+		    // Usually this can be a field rather than a method variable
+		    Random rand = new Random();
+
+		    // nextInt is normally exclusive of the top value,
+		    // so add 1 to make it inclusive
+		    int randomNum = rand.nextInt((max - min) + 1) + min;
+
+		    return randomNum;
+		}
+
+		// METRIC METHODS //
+
+		/**
+		* get the total count of documents in the training set for this particular set
+		*/
+		public int getNumberOfDocsInDC_TrainingClass(){
+			return this.DC_TrainingSet.size();
+		}
+
+		/**
+		* get the total count of documents in the training set for this particular set that contain the term w
+		*/
+		public int getNumberOfDocsInDC_TrainingClassWith_W(String term){
+			return this.keyTermsDocCount.get(term).size();
+		}
+
+		/**
+		* get the total count of documents in the training set for this particular set that absents the term w
+		*/
+		public int getNumberOfDocsInDC_TrainingClassWithout_W(String term){
+			return this.DC_TrainingSet.size() - this.keyTermsDocCount.get(term).size();
+		}
+	}
+}
