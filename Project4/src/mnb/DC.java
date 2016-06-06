@@ -1,26 +1,47 @@
 package mnb;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.util.Map;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
+
+import util.PorterStemmer;
+import util.StopWords;
 
 public class DC {
 
+	// utilities:
+	private StopWords stopword;
+	private PorterStemmer stemmer;
+	
+	private int upperBoundTraining;
+	private int upperBoundTest;
+	
 	// Map<Class, PartitionedDC>
-	Map<String, PartitionedDC> partitionedDCs;
+	private Map<String, PartitionedDC> partitionedDCs;
 
 	// holds on dinstinct instances of terms in the corpus
-	Set<String> vocab;
+	private Set<String> vocab;
+	// holds on dinstinct instances of terms in the DC_Training
+	private Set<String> vocabDC_Training;
 
 	private final String rootDir = "root" + File.separator;
 
-	public DC(){
+	public DC(int _upperBoundTraining, int _upperBoundTest){
+		this.stopword = new StopWords();
+		this.stemmer = new PorterStemmer();
 		this.partitionedDCs = new TreeMap<String, PartitionedDC>();
 		this.vocab = new TreeSet<String>();
-		this.init();
+		this.vocabDC_Training = new TreeSet<String>();
+		
+		this.upperBoundTraining = _upperBoundTraining;
+		this.upperBoundTest = _upperBoundTest;
 	}
 
 	/**
@@ -36,6 +57,13 @@ public class DC {
 	public Set<String> getVocab(){
 		return this.vocab;
 	}
+	
+	/**
+	* returns set of vocab in the corpus
+	*/
+	public Set<String> getDC_TrainingVocab(){
+		return this.vocabDC_Training;
+	}
 
 	/**
 	* parses through all files for each folder
@@ -45,27 +73,53 @@ public class DC {
 	* 4) split document with "\n\n"
 	* 5) strip out the header of the document
 	* 6) pass document file to be parsed
+	 * @throws FileNotFoundException 
 	*/
-	public void init(){
-		/* IMPLEMENT*/
-		/*
-			For each folder in folders:
-				String className = folder.name;
-				this.addClass(className);
+	@SuppressWarnings("resource")
+	public void init(String dir) throws FileNotFoundException{
+		
+		// open document root directory
+		File file = new File(rootDir + dir);
+		
+		// get all class names by directory names
+		String[] classNames = file.list(new FilenameFilter(){
+			@Override
+			public boolean accept(File current, String name){
+				return new File(current, name).isDirectory();
+			}
+		});
 
-				for each document in folder:
+		// for each class in classes
+		for(String className : classNames){
+			// add class to collection
+			this.addClass(className);
+			
+			// get all documents within a given class
+			File[] documents = new File(rootDir + dir + File.separator + className).listFiles();
+			
+			// for each document in the class
+			for(File document : documents){
+				// get document name as document id
+				String docId = document.getName();
+				
+				// store docId in collection, if result is 0, then doc was placed in training set, otherwise 1 for test set
+				int DCSetResult = this.addDocument(docId, className);
 
-					String docId = document.name;
-					this.addDocument(docId);
+				// split the document for any double new line
+				Scanner docReader = new Scanner(document);
+				docReader = docReader.useDelimiter("\n\n");
+				
+				// strip header and build body
+				docReader.next();
+				
+				// for each part of the document divided by a double new line
+				while(docReader.hasNext()){
+					this.parseDoc(docReader.next(), className, docId, DCSetResult);
+				}
 
-					document.stripEmails
-					document.split("\n\n");
-					document.stripHeader;
-					
-					this.parseDoc(document, className, docId);
-					
-
-		*/
+				docReader.close();
+			}
+		}
 	}
 
 	/**
@@ -77,40 +131,86 @@ public class DC {
 	* 5) stem the term
 	* 6) add the Term to the partitioned documents
 	*/
-	private void parseDoc(File doc, String className, String docId){
-		/* IMPLEMENT*/
-
-		/*
-			for each line in doc:
-				for each term in line:
-					term.stripPunctuation;
-					if(term.isStopWord):
-						continue;
-					term.stem;
-					if(term is valid from stemmer):
-						this.addTerm(className, docId, term);
-		*/
+	private void parseDoc(String docPortion, String className, String docId, int DCSetResult){
+		
+		// domain regex patter
+		String domainPattern = "[a-z0-9\\-\\.]+\\.(com|org|net|mil|edu|(co\\.[a-z].))";
+		Pattern pFind = Pattern.compile(domainPattern);
+		
+		// scan the document portion
+		Scanner docReader = new Scanner(docPortion);
+		
+		String line;
+		
+		// for each line in the document portion
+		while(docReader.hasNextLine()){
+			line = docReader.nextLine();
+			
+			// if line is blank, skip it
+			if(line.equals("")){
+				continue;
+			}
+			Scanner lineReader = new Scanner(line);
+			
+			String term;
+			while(lineReader.hasNext()){
+				
+				term = lineReader.next();
+				// if term matches the regex, skip it
+				if(pFind.matcher(term).find()){
+					continue;
+				}
+				
+				// lower case term
+				term = term.toLowerCase();
+				// strip punctuation
+				term = term.replaceAll("[^A-Za-z0-9]", "");
+				
+				// check if term is stopword
+				if(this.stopword.contains(term)){
+					continue;
+				}
+				
+				// stem the term
+				String stemmedTerm = this.stemmer.stem(term);
+				if(!stemmedTerm.equals("Invalid term") 
+						&& !stemmedTerm.equals("No term entered")){
+					this.addTerm(className, docId, stemmedTerm, DCSetResult);
+				}
+			}
+			lineReader.close();
+		}
+		docReader.close();
 	}
 
 	/**
 	* adds a term to the DC_Training and DC_Test set with a specified document id
 	*/
-	private void addTerm(String className, String docId, String term){
+	private void addTerm(String className, String docId, String term, int DCSetResult){
 		PartitionedDC partitionedDC = this.partitionedDCs.get(className);
 		partitionedDC.addTerm(docId, term);
 		this.partitionedDCs.put(className, partitionedDC);
 
 		// include term in corpus terms
 		this.vocab.add(term);
+		
+		// if the document containing the term is in the Training set, store it in the vocab of the DC_Training
+		if(DCSetResult == 0){
+			this.vocabDC_Training.add(term);
+		}
 	}
 
 	/**
 	* adds a document to the DC_Training and DC_Test set with specified class name
 	*/
-	private void addDocument(String docId, String className){
+	private int addDocument(String docId, String className){
 		PartitionedDC partitionedDC = this.partitionedDCs.get(className);
-		partitionedDC.addDocument(docId);
+		
+		// returns 0 if doc was placed in training set, otherwise 1 for test set
+		int result = partitionedDC.addDocument(docId);
+		
 		this.partitionedDCs.put(className, partitionedDC);
+		return result;
 	}
 
 	/**
@@ -125,14 +225,14 @@ public class DC {
 	/**
 	* number of documents in DC_training in which w is absent that are labeled as c
 	*/
-	public int getNumberOfDocsInDC_TrainingWithout_W_Labeled_C(String className, String term){
+	public double getNumberOfDocsInDC_TrainingWithout_W_Labeled_C(String className, String term){
 		return this.partitionedDCs.get(className).getNumberOfDocsInDC_TrainingClassWithout_W(term);
 	}
 
 	/**
 	* number of documents in DC_training in which w occurs that are labeled as c
 	*/
-	public int getNumberOfDocsInDC_TrainingWith_W_Labeled_C(String className, String term){
+	public double getNumberOfDocsInDC_TrainingWith_W_Labeled_C(String className, String term){
 		return this.partitionedDCs.get(className).getNumberOfDocsInDC_TrainingClassWith_W(term);
 	}
 
@@ -159,8 +259,8 @@ public class DC {
 	* number of documents in DC_training in which w occurs
 	* Total number of documents in DC_training in which w occurs
 	*/
-	public int getNumberOfDocumentsInDC_TrainingWith_W(String term){
-		int count = 0;
+	public double getNumberOfDocumentsInDC_TrainingWith_W(String term){
+		double count = 0.0;
 		for(String key : this.partitionedDCs.keySet()){
 			count += this.partitionedDCs.get(key).getNumberOfDocsInDC_TrainingClassWith_W(term);
 		}
@@ -179,25 +279,28 @@ public class DC {
 	}
 
 
-
+	
+	/*******************************************************************
+							WRAPPED CLASS
+	 *******************************************************************/
 	/**
 	* CLASS PARTITIONED DC
 	* This class includes the DC_Training Set and DC_TestSet, which are divided 80% and 20%
 	*/
 	private class PartitionedDC{
 
-		// Map<DocId, Map<Term, Count>>
+		//Map<DocId, Map<Term, Count>>
 		private Map<String, Map<String, Integer>> DC_TrainingSet; 
-		// Map<DocId, Map<Term, Count>>
+		//Map<DocId, Map<Term, Count>>
 		private Map<String, Map<String, Integer>> DC_TestSet; 
 
 		//Map<Term, Set<DocId>> keeps track of how many documents include the term W.
-		private Map<String, Set<String>> keyTermsDocCount;
+		private Map<String, Set<String>> keyTermsDocCountTrainingSet;
 
 		public PartitionedDC(){
 			this.DC_TrainingSet = new TreeMap<String, Map<String, Integer>>();
 			this.DC_TestSet = new TreeMap<String, Map<String, Integer>>();
-			this.keyTermsDocCount = new TreeMap<String, Set<String>>();
+			this.keyTermsDocCountTrainingSet = new TreeMap<String, Set<String>>();
 		}
 
 		/**
@@ -241,13 +344,13 @@ public class DC {
 		*/
 		private void updateKeyTermsDocCount(String docId, String term){
 			
-			if(!this.keyTermsDocCount.containsKey(term)){
-				this.keyTermsDocCount.put(term, new TreeSet<String>());
+			if(!this.keyTermsDocCountTrainingSet.containsKey(term)){
+				this.keyTermsDocCountTrainingSet.put(term, new TreeSet<String>());
 			}
 
-			Set<String> docSet = this.keyTermsDocCount.get(term);
+			Set<String> docSet = this.keyTermsDocCountTrainingSet.get(term);
 			docSet.add(docId);
-			this.keyTermsDocCount.put(term, docSet);
+			this.keyTermsDocCountTrainingSet.put(term, docSet);
 		}
 
 		/**
@@ -273,12 +376,12 @@ public class DC {
 		* First choose a random number between 1 and 10, if the number is less than 9, include the document in the training set
 		* otherwise include it in the test set.
 		*/
-		public void addDocument(String docId){
+		public int addDocument(String docId){
 			if(randInt(1, 10) < 9){
-				this.addDocToTrainingSet(docId);
+				return this.addDocToTrainingSet(docId);
 			}
 			else{
-				this.addDocToTestSet(docId);
+				return this.addDocToTestSet(docId);
 			}
 		}
 
@@ -286,12 +389,14 @@ public class DC {
 		* Checks to see if the number of documents in training set is greater than or equal to 800, if so add the document to the Test Set, 
 		* otherwise, add it to the training set.
 		*/
-		private void addDocToTrainingSet(String docId){
-			if(this.DC_TrainingSet.size() >= 800){
+		private int addDocToTrainingSet(String docId){
+			if(this.DC_TrainingSet.size() >= upperBoundTraining){
 				this.DC_TestSet.put(docId, new TreeMap<String, Integer>());
+				return 1;
 			}
 			else{
 				this.DC_TrainingSet.put(docId, new TreeMap<String, Integer>());
+				return 0;
 			}
 		}
 
@@ -299,12 +404,14 @@ public class DC {
 		* Checks to see if the number of documents in test set is greater than or equal to 200, if so add the document to the Training Set, 
 		* otherwise, add it to the test set.
 		*/
-		private void addDocToTestSet(String docId){
-			if(this.DC_TestSet.size() >= 200){
+		private int addDocToTestSet(String docId){
+			if(this.DC_TestSet.size() >= upperBoundTest){
 				this.DC_TrainingSet.put(docId, new TreeMap<String, Integer>());
+				return 0;
 			}
 			else{
 				this.DC_TestSet.put(docId, new TreeMap<String, Integer>());
+				return 1;
 			}
 		}
 
@@ -342,15 +449,25 @@ public class DC {
 		/**
 		* get the total count of documents in the training set for this particular set that contain the term w
 		*/
-		public int getNumberOfDocsInDC_TrainingClassWith_W(String term){
-			return this.keyTermsDocCount.get(term).size();
+		public double getNumberOfDocsInDC_TrainingClassWith_W(String term){
+			double value = 0.0;
+			if(this.keyTermsDocCountTrainingSet.containsKey(term)){
+				value = (double)this.keyTermsDocCountTrainingSet.get(term).size();
+			}
+			//Laplacian smoothed estimate?????? /* WILL REVERT BACK TO HERE */
+			return (value + 1.0) / (this.DC_TrainingSet.size() + 1);
+			//return value;
 		}
 
 		/**
 		* get the total count of documents in the training set for this particular set that absents the term w
 		*/
-		public int getNumberOfDocsInDC_TrainingClassWithout_W(String term){
-			return this.DC_TrainingSet.size() - this.keyTermsDocCount.get(term).size();
+		public double getNumberOfDocsInDC_TrainingClassWithout_W(String term){
+			double value = 0.0;
+			if(this.keyTermsDocCountTrainingSet.containsKey(term)){
+				value = this.keyTermsDocCountTrainingSet.get(term).size();
+			}
+			return this.DC_TrainingSet.size() - value ;
 		}
 	}
 }

@@ -1,0 +1,16 @@
+package dc_test;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+import mnb.DC;
+
+public class DCTest {
+
+	@Test
+	public void test() {
+		DC documentCollection = new DC();
+	}
+
+}

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy element &apos;StopWords.java&apos; to &apos;Project4/src/util&apos;&#x0D;&#x0A;- Original project: &apos;Project3&apos;&#x0D;&#x0A;- Destination element: &apos;Project4/src/util&apos;&#x0D;&#x0A;- Original element: &apos;util.StopWords.java&apos;" description="Copy compilation unit" destination="=Project4/src&lt;util" element1="/src&lt;util{StopWords.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyResources" stamp="1465175598411" units="1" version="1.0"/>
+</session>

@@ -1,0 +1,21 @@
+package dc_test;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+import mnb.DC;
+
+public class DCTest {
+
+	@Test
+	public void test() {
+		try{
+		DC documentCollection = new DC();
+		}
+		catch(IOException e){
+			
+		}
+	}
+
+}

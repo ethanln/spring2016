@@ -1,0 +1,64 @@
+package mnb;
+
+import java.util.TreeMap;
+
+public class MNBClassification{
+
+	private MDR training_set;
+	private MDR test_set;
+
+	private String[] M = {"all", "24800", "18600", "12400", "6200"};
+
+
+	public MNBClassification(){
+		this.training_set = new MDR();
+		this.test_set = new MDR();
+	}
+
+	public void init(){
+
+
+	}
+
+	public void doClassification(){
+		for(String m : M){
+			if(!m.equals("all")){
+				DC selectedFeatures = this.featureSelect(Integer.parseInt(m));
+			}
+			else{
+				this.setUpTrainingSet();
+			}
+		}
+	}
+
+	public DC featureSelect(int m){
+		return null;
+	}
+
+	public void setUpTrainingSet(){
+
+	}
+
+	public void setUpTestSet(){
+		
+	}
+
+	private class feature{
+		private int count;
+		private String term;
+		
+		public feature(String _term)
+		{
+			this.setCount(0);
+			this.term = _term;
+		}
+
+		public int getCount() {
+			return count;
+		}
+
+		public void setCount(int count) {
+			this.count = count;
+		}
+	}
+}

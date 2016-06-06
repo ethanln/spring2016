@@ -1,0 +1,82 @@
+package mnb;
+
+import java.util.TreeMap;
+
+import model.Document;
+
+public class MNBClassification{
+
+	private MDR training_set;
+	private MDR test_set;
+
+	private String[] M = {"all", "24800", "18600", "12400", "6200"};
+
+
+	public MNBClassification(){
+		this.training_set = new MDR();
+		this.test_set = new MDR();
+	}
+
+	public void init(){
+
+
+	}
+
+	public void doClassification(){
+		for(String m : M){
+			if(!m.equals("all")){
+				DC selectedFeatures = this.featureSelect(Integer.parseInt(m));
+			}
+			else{
+				this.setUpTrainingSet();
+			}
+		}
+	}
+
+	public DC featureSelect(int m){
+		return null;
+	}
+
+	public void setUpTrainingSet(){
+
+	}
+
+	public void setUpTestSet(){
+		
+	}
+
+	private class Feature implements Comparable{
+		private int count;
+		private String term;
+		
+		public Feature(String _term)
+		{
+			this.count = 0;
+			this.term = _term;
+		}
+
+		public int getCount() {
+			return count;
+		}
+
+		public void addCount() {
+			this.count++;
+		}
+
+		public String getTerm() {
+			return term;
+		}
+
+		@Override
+		public int compareTo(Object obj) {
+			Feature doc = (Feature)obj;
+			if(this.count == doc.getCount()){
+				return 1;
+			}
+			else if(this.count > doc.getCount()){
+				return -1;
+			}
+			return 1;
+		}
+	}
+}
