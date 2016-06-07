@@ -1,0 +1,87 @@
+package mnb;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+public class MNBProbability {
+
+	public static final String NOT_SEEN = "n-o-t-s-e-e-n";
+	public MNBProbability(){
+		
+	}
+	
+	/**
+	 * *****************************************************************************************************
+	 * 											COMPUTE WORD PROBABILITY
+	 * *****************************************************************************************************
+	 * @param training_set
+	 * @return
+	 */
+	public Map<String, Map<String, Double>> computeWordProbability(DC collection, Set<String> features){
+		// Map<class, Map<word, probability>>
+		Map<String, Map<String, Double>> WordProbabilities = new TreeMap<String, Map<String, Double>>();
+		
+		for(String c : collection.getClasses()){
+			WordProbabilities.put(c, new TreeMap<String, Double>());
+			for(String w : collection.getDC_TrainingVocab()){
+				if(features.contains(w)){
+					WordProbabilities.get(c).put(w, this.getWordProbability(w, c, collection));
+				}
+			}
+			WordProbabilities.get(c).put(NOT_SEEN, (1.0 / (collection.getTotalTermsInClass(c) + collection.getTotalDistinctTermsInTrainingSet())));
+		}
+
+		return WordProbabilities;
+	}
+	
+	/**
+	 * *****************************************************************************************************
+	 * 											GET WORD PROBABILITY
+	 * *****************************************************************************************************
+	 * retrieves the probability value of a word in a particular class, which includes the probability value
+	 * of each word not seen during the training phase of MNB.  Stored in WordProbabilities
+	 * P(W|C)
+	 * @param w
+	 * @param c
+	 * @return
+	 */
+	public double getWordProbability(String w, String c, DC collection){	
+		double probabilityOfW_in_C = 0.0;
+		probabilityOfW_in_C += ((double)collection.getCountOfWordInClass(w, c) + 1.0) / 
+				((double)collection.getTotalTermsInClass(c) + (double)collection.getTotalDistinctTermsInTrainingSet());
+		
+		return probabilityOfW_in_C;
+	}
+	
+	/**
+	 * *****************************************************************************************************
+	 * 											COMPUTE CLASS PROBABILITY
+	 * *****************************************************************************************************
+	 * @param training_set
+	 * @return
+	 */
+	public Map<String, Double> computeClassProbability(DC collection){
+		Map<String, Double> ClassProbabilities = new TreeMap<String, Double>();
+		//TODO: IMPLEMENT
+		
+		for(String className : collection.getClasses()){
+			
+		}
+		return ClassProbabilities;
+	}
+
+	/**
+	 * *****************************************************************************************************
+	 * 											GET CLASS PROBABILITY
+	 * *****************************************************************************************************
+	 * retrieves the probability value of a natural class, which is stored in ClassProbabilities
+	 * @param c
+	 * @return
+	 */
+	public double getClassProbability(String c){		
+		double probabilityOfC = 0.0;
+		//TODO: IMPLEMENT
+		return probabilityOfC;
+	}
+}

@@ -10,8 +10,8 @@ import util.MathExt;
 
 public class MNBClassification{
 
-	private MDR training_set;
-	private MDR test_set;
+	//private MDR training_set;
+	//private MDR test_set;
 
 	private String[] M = {"all", "24800", "18600", "12400", "6200"};
 	
@@ -39,38 +39,43 @@ public class MNBClassification{
 	 */
 	public void doClassification(){
 		for(String m : M){
-			Map<String, Integer> features;
+			Set<String> features;
 			if(!m.equals("all")){
 				features = this.featureSelect(Integer.parseInt(m));	
 			}
 			else{
-				features = new TreeMap<String, Integer>();
-				int pos = 0;
-				for(String term : this.documentCollection.getDC_TrainingVocab()){
-					features.put(term, pos);
-					pos++;
-				}
+				features = this.documentCollection.getDC_TrainingVocab();
 			}
 			
-			this.setUpTrainingSet(features);
-			this.setUpTestSet(features);
+			Map<String, Map<String, Double>> WordProbabilities = this.probability.computeWordProbability(this.documentCollection, features);
+			Map<String, Double> ClassProbabilities = this.probability.computeClassProbability(this.documentCollection);
 			
-			Map<String, Map<String, Double>> WordProbabilities = this.probability.computeWordProbability(this.training_set);
-			
-			this.getLabels();
+			// do labeling for each class test set
+			for(String className : this.documentCollection.getClasses()){
+				
+				// Map<DocId, resultClass> - this contains all documents of a test set of a particular 
+				// class and their class results from the label method
+				Map<String, String> classResults = new TreeMap<String, String>();
+				
+				// Map<DocId, Map<term, count>> - fetch all DC_test documents of a particular class
+				Map<String, Map<String, Integer>> test_set = this.documentCollection.getDC_Test_Set(className);
+				
+				// for each document in the test set of the class
+				for(String docId : test_set.keySet()){
+					// get class label of a document
+					String classResult = this.label(WordProbabilities, ClassProbabilities, test_set.get(docId), docId);
+					classResults.put(docId, classResult);
+					
+					System.out.print("Document: " + docId + "\n");
+					System.out.print("Original Class: " + className + "\n");
+					System.out.print("Output Class: " + classResult + "\n\n");
+				}
+				
+				// measure accuracy of class TODO: HERE
+			}
 		}
 	}
 
-	private void getLabels(){
-		for(String className : this.documentCollection.getClasses()){
-			for(String docId : this.documentCollection.getDC_Test_Set(className).keySet()){
-				System.out.print("Document: " + docId + "\n");
-				System.out.print("Original Class: " + className + "\n");
-				System.out.print("Output Class: " + this.label(docId) + "\n\n");
-				
-			}
-		}
-	}
 	/**
 	 * *************************************************************************************
 	 * 									LABEL
@@ -80,8 +85,36 @@ public class MNBClassification{
 	 * @param m
 	 * @return
 	 */
-	public String label(String docId){
-		return "";
+	public String label(Map<String, Map<String, Double>> WordProbabilities, 
+						Map<String, Double> ClassProbabilities, 
+						Map<String, Integer> wordSetInDoc, 
+						String docId){
+		// Set<class : score>
+		Set<ClassScore> scores = new TreeSet<ClassScore>();
+		
+		// iterate through class name for the document
+		for(String className : this.documentCollection.getClasses()){
+			
+			// initial score
+			double score = 1.0;
+			
+			// for each word in the document
+			for(String word : wordSetInDoc.keySet()){
+				
+				// check if word in the probability set of the specified class
+				if(WordProbabilities.get(className).containsKey(word)){
+					// P(w|c)^(term frequency in document)
+					score *= Math.pow(WordProbabilities.get(className).get(word), wordSetInDoc.get(word));
+				}
+				else{
+					// P(w|c)^(term frequency in document)  -  In this case it is not seen word, because it can't be found in 
+					// the word probabilities for the particular class
+					score *= Math.pow(WordProbabilities.get(className).get(MNBProbability.NOT_SEEN), wordSetInDoc.get(word));
+				}
+			}
+			scores.add(new ClassScore(className, score /* ClassProbabilities.get(className)*/));
+		}
+		return scores.iterator().next().className;
 	}
 	
 	/**
@@ -92,7 +125,7 @@ public class MNBClassification{
 	 * @param m
 	 * @return
 	 */
-	public Map<String, Integer> featureSelect(int m){
+	public Set<String> featureSelect(int m){
 		TreeSet<Feature> featureSet = new TreeSet<Feature>();
 		
 		// get list of all vocabulary from corpus
@@ -123,116 +156,24 @@ public class MNBClassification{
 		}	
 		
 		// sub set the list of features till the mth position
-		TreeMap<String, Integer> features = new TreeMap<String, Integer>();
+		TreeSet<String> features = new TreeSet<String>();
 		
 		// variable to keep track of position of term
-		int pos = 0;
+		int count = 0;
 		for(Feature feature : featureSet){
-			if(pos >= m){
+			if(count >= m){
 				break;
 			}
 			
-			features.put(feature.getTerm(), pos);
-			pos++;
+			features.add(feature.getTerm());
+			count++;
 		}
 		
 		// return features
 		return features;
 	}
 	
-	/**
-	 * make the training_set
-	 * @param features
-	 */
-	private void setUpTrainingSet(Map<String, Integer> features){
-		this.training_set = new MDR(features);
-
-		System.out.print("Making Training Set... \n");
-		// get Class set
-		Set<String> classNames = this.documentCollection.getClasses();
-		
-		// initialize the class names into the training_set
-		for(String className : classNames){
-			this.training_set.addClass(className);
-		}
-		
-		// for each class in set
-		for(String className : classNames){
-			System.out.print("class: " + className + "\n");
-			
-			// get DC_Training Set
-			Map<String, Map<String, Integer>> DC_Training_set = this.documentCollection.getDC_Training_Set(className);
-			
-			// for each docId in DC_Training_set
-			for(String docId : DC_Training_set.keySet()){
-				
-				// initialize row for the document in the MNB model
-				this.training_set.addDoc(docId, className);
-				
-				// start filling in row
-				Map<String, Integer> termsDC_Training_set = DC_Training_set.get(docId);
-				
-				// for each term in the document in the DC Training set
-				for(String term : termsDC_Training_set.keySet()){
-					
-					// check to make sure the term is in the feature set
-					if(features.containsKey(term)){
-						// add term count to the document row
-						//this.training_set.addTermCount(docId, term, termsDC_Training_set.get(term));
-						this.training_set.addTermCount(className, docId, term, termsDC_Training_set.get(term));
-					}
-				}
-			}
-		}
-		System.out.print("Finished Making Training Set \n");
-	}
-
-	/**
-	 * make the test_set
-	 * @param features
-	 */
-	private void setUpTestSet(Map<String, Integer> features){
-		System.out.print("Making Test Set...");
-		this.test_set = new MDR(features);
-		
-		// get Class set
-		Set<String> classNames = this.documentCollection.getClasses();
-		
-		// initialize the class names into the test_set
-		for(String className : classNames){
-			this.test_set.addClass(className);
-		}
-		
-		// for each class in set
-		for(String className : classNames){
-			
-			// get DC_Training Set
-			Map<String, Map<String, Integer>> DC_Test_set = this.documentCollection.getDC_Test_Set(className);
-			
-			// for each docId in DC_Training_set
-			for(String docId : DC_Test_set.keySet()){
-				
-				// initialize row for the document in the MNB model
-				this.test_set.addDoc(docId, className);
-				
-				// start filling in row
-				Map<String, Integer> termsDC_Test_set = DC_Test_set.get(docId);
-				
-				// for each term in the document in the DC Training set
-				for(String term : termsDC_Test_set.keySet()){
-					
-					// check to make sure the term is in the feature set
-					if(features.containsKey(term)){
-						// add term count to the document row
-						//this.test_set.addTermCount(docId, term, termsDC_Test_set.get(term));
-						this.test_set.addTermCount(className, docId, term, termsDC_Test_set.get(term));
-					}
-				}
-			}
-		}
-		
-		System.out.print("Finished Making Test Set \n");
-	}
+	
 	
 	// P(c)
 	private double PCollection(String c){
@@ -288,6 +229,29 @@ public class MNBClassification{
 				return 1;
 			}
 			else if(this.score > doc.getScore()){
+				return -1;
+			}
+			return 1;
+		}
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private class ClassScore implements Comparable{
+		
+		public ClassScore(String _className, double _score){
+			this.className = _className;
+			this.score = _score;
+		}
+		public String className;
+		public double score;
+
+		@Override
+		public int compareTo(Object obj) {
+			ClassScore doc = (ClassScore)obj;
+			if(this.score == doc.score){
+				return 1;
+			}
+			else if(this.score > doc.score){
 				return -1;
 			}
 			return 1;

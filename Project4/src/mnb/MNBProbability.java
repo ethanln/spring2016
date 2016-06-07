@@ -1,10 +1,12 @@
 package mnb;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class MNBProbability {
 
+	public static final String NOT_SEEN = "n-o-t-s-e-e-n";
 	public MNBProbability(){
 		
 	}
@@ -16,17 +18,20 @@ public class MNBProbability {
 	 * @param training_set
 	 * @return
 	 */
-	public Map<String, Map<String, Double>> computeWordProbability(MDR training_set){
+	public Map<String, Map<String, Double>> computeWordProbability(DC collection, Set<String> features){
 		// Map<class, Map<word, probability>>
 		Map<String, Map<String, Double>> WordProbabilities = new TreeMap<String, Map<String, Double>>();
 		
-		for(String c : training_set.getClasses()){
+		for(String c : collection.getClasses()){
 			WordProbabilities.put(c, new TreeMap<String, Double>());
-			for(String w : training_set.getDistinctTermsInSet()){
-				WordProbabilities.get(c).put(w, this.getWordProbability(w, c, training_set));
+			for(String w : collection.getDC_TrainingVocab()){
+				if(features.contains(w)){
+					WordProbabilities.get(c).put(w, this.getWordProbability(w, c, collection));
+				}
 			}
+			WordProbabilities.get(c).put(NOT_SEEN, (1.0 / (collection.getTotalTermsInClass(c) + collection.getTotalDistinctTermsInTrainingSet())));
 		}
-		
+
 		return WordProbabilities;
 	}
 	
@@ -41,10 +46,10 @@ public class MNBProbability {
 	 * @param c
 	 * @return
 	 */
-	public double getWordProbability(String w, String c, MDR training_set){	
+	public double getWordProbability(String w, String c, DC collection){	
 		double probabilityOfW_in_C = 0.0;
-		probabilityOfW_in_C += (training_set.getCountOfWInC(w, c) + 1.0) / 
-				(training_set.getNumberOfTermsInC(c) + training_set.getNumberOfDistinctTermsInSet());
+		probabilityOfW_in_C += ((double)collection.getCountOfWordInClass(w, c) + 1.0) / 
+				((double)collection.getTotalTermsInClass(c) + (double)collection.getTotalDistinctTermsInTrainingSet());
 		
 		return probabilityOfW_in_C;
 	}
@@ -56,9 +61,13 @@ public class MNBProbability {
 	 * @param training_set
 	 * @return
 	 */
-	public Map<String, Map<String, Double>> computeClassProbability(MDR training_set){
-		Map<String, Map<String, Double>> ClassProbabilities = new TreeMap<String, Map<String, Double>>();
+	public Map<String, Double> computeClassProbability(DC collection){
+		Map<String, Double> ClassProbabilities = new TreeMap<String, Double>();
 		//TODO: IMPLEMENT
+		
+		for(String className : collection.getClasses()){
+			ClassProbabilities.put(className, getClassProbability(className, collection));
+		}
 		return ClassProbabilities;
 	}
 
@@ -70,7 +79,7 @@ public class MNBProbability {
 	 * @param c
 	 * @return
 	 */
-	public double getClassProbability(String c){		
+	public double getClassProbability(String c, DC collection){		
 		double probabilityOfC = 0.0;
 		//TODO: IMPLEMENT
 		return probabilityOfC;
