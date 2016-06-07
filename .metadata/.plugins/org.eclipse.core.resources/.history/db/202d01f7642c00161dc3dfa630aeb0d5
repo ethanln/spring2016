@@ -1,0 +1,66 @@
+package mnb;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
+
+public class MDR{
+
+	// Map<class, Map<Docid, Row>>  WHAT DO I DO ABOUT DOCUMENTS WITH THE SAME ID FROM TWO DIFFERENT CLASSES
+	private Map<String, Map<String, MDRRow>> table;
+	// Map<term, indexPosition>
+	private Map<String, Integer> features;
+
+	public MDR(Map<String, Integer> _features){
+		this.table = new TreeMap<String, Map<String, MDRRow>>();
+		this.features = _features;
+	}
+	
+	public void addClass(String className){
+		this.table.put(className, new TreeMap<String, MDRRow>());
+	}
+
+	public void addDoc(String docId, String className){
+		Map<String, MDRRow> classTable = this.table.get(className);
+		classTable.put(className, new MDRRow(features.size()));
+		this.table.put(className, classTable);
+	}
+
+	public void addTermCount(String className, String docId, String term, int amount){
+		// make sure class name exists as key in table and the term is in the feature set
+		if(this.table.containsKey(className) && this.features.containsKey(term)){
+			// get table affiliated with the class
+			Map<String, MDRRow> classTable = this.table.get(className);
+			
+			// make sure docId exists in the class table
+			if(classTable.containsKey(docId)){
+				// get row of specified id
+				MDRRow row = classTable.get(docId);
+				row.incrementTermFrequency(this.features.get(term), amount);
+				classTable.put(docId, row);
+			}
+			this.table.put(className, classTable);
+		}
+	}
+	
+	public MDRRow getRow(String docId){
+		return this.table.get(docId);
+	}
+
+	private class MDRRow{
+
+		private int[] termFrequency;
+
+		public MDRRow(int size){
+			this.termFrequency = new int[size];
+		}
+
+		public void incrementTermFrequency(int index, int amount){
+			this.termFrequency[index] += amount;
+		}
+
+		public int getCount(int index){
+			return this.termFrequency[index];
+		}
+	}
+}

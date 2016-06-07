@@ -1,0 +1,51 @@
+package mnb;
+
+import java.util.Map;
+import java.util.TreeMap;
+
+public class MDR{
+	// Map<DocId, MRDRow>
+	private Map<String, MDRRow> table;
+
+	public MDR(){
+		this.table = new TreeMap<String, MDRRow>();
+	}
+
+	public void addDoc(String docId, String className, Map<String, Integer> termFrequencies){
+		this.table.put(docId, new MDRRow(className, termFrequencies));
+	}
+
+	public void addTerm(String docId, String term, int amount){
+		if(this.table.containsKey(docId)){
+			MDRRow row = this.table.get(docId);
+			row.incrementTermFrequency(term, amount);
+			this.table.put(docId, row);
+		}
+	}
+
+	public MDRRow getRow(String docId){
+		return this.table.get(docId);
+	}
+
+	private class MDRRow{
+		private Map<String, Integer> termFrequency;
+		private String className;
+
+		public MDRRow(String _className, Map<String, Integer> _termFrequency){
+			this.className = _className;
+			this.termFrequency = _termFrequency;
+		}
+
+		public void incrementTermFrequency(String term, int amount){
+			if(this.termFrequency.containsKey(term)){
+			 	int count = this.termFrequency.get(term);
+			 	count += amount;
+			 	this.termFrequency.put(term, count);
+			}
+		}
+
+		public Map<String, Integer> getRow(){
+			return this.termFrequency;
+		}
+	}
+}

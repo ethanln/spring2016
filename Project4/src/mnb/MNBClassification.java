@@ -1,8 +1,9 @@
 package mnb;
 
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import util.MathExt;
@@ -15,12 +16,13 @@ public class MNBClassification{
 	private String[] M = {"all", "24800", "18600", "12400", "6200"};
 	
 	private DC documentCollection;
+	
+	private MNBProbability probability;
 
 
 	public MNBClassification(int upperBoundTraining, int upperBoundTest){
-		this.training_set = new MDR();
-		this.test_set = new MDR();
 		this.documentCollection = new DC(upperBoundTraining, upperBoundTest);
+		this.probability = new MNBProbability();
 	}
 
 	public void init(String collectionDir){
@@ -32,26 +34,65 @@ public class MNBClassification{
 		}
 	}
 
+	/**
+	 * begin classification
+	 */
 	public void doClassification(){
 		for(String m : M){
+			Map<String, Integer> features;
 			if(!m.equals("all")){
-				ArrayList<Feature> features = this.featureSelect(Integer.parseInt(m));
-				this.setUpTrainingSet(features);
-				this.setUpTestSet(features);
+				features = this.featureSelect(Integer.parseInt(m));	
 			}
 			else{
-				this.setUpTrainingSet();
-				this.setUpTestSet();
+				features = new TreeMap<String, Integer>();
+				int pos = 0;
+				for(String term : this.documentCollection.getDC_TrainingVocab()){
+					features.put(term, pos);
+					pos++;
+				}
 			}
+			
+			this.setUpTrainingSet(features);
+			this.setUpTestSet(features);
+			
+			Map<String, Map<String, Double>> WordProbabilities = this.probability.computeWordProbability(this.training_set);
+			
+			this.getLabels();
 		}
 	}
 
+	private void getLabels(){
+		for(String className : this.documentCollection.getClasses()){
+			for(String docId : this.documentCollection.getDC_Test_Set(className).keySet()){
+				System.out.print("Document: " + docId + "\n");
+				System.out.print("Original Class: " + className + "\n");
+				System.out.print("Output Class: " + this.label(docId) + "\n\n");
+				
+			}
+		}
+	}
 	/**
+	 * *************************************************************************************
+	 * 									LABEL
+	 * *************************************************************************************
+	 * Assigns the most probable class for a particular document in test_set.
+	 * In performing the classification task, you are required to use the getWordProbability and getClassProbability methods
+	 * @param m
+	 * @return
+	 */
+	public String label(String docId){
+		return "";
+	}
+	
+	/**
+	 * *************************************************************************************
+	 * 								FEATURE SELECT
+	 * *************************************************************************************
 	 * feature selection for the first mth terms in the DC_training found in the DC instance
 	 * @param m
 	 * @return
 	 */
-	public ArrayList<Feature> featureSelect(int m){
+	public Map<String, Integer> featureSelect(int m){
 		TreeSet<Feature> featureSet = new TreeSet<Feature>();
 		
 		// get list of all vocabulary from corpus
@@ -82,34 +123,115 @@ public class MNBClassification{
 		}	
 		
 		// sub set the list of features till the mth position
-		ArrayList<Feature> features = new ArrayList<Feature>();
-		int count = 0;
+		TreeMap<String, Integer> features = new TreeMap<String, Integer>();
+		
+		// variable to keep track of position of term
+		int pos = 0;
 		for(Feature feature : featureSet){
-			if(count == m){
+			if(pos >= m){
 				break;
 			}
 			
-			features.add(feature);
-			count++;
+			features.put(feature.getTerm(), pos);
+			pos++;
 		}
+		
 		// return features
 		return features;
 	}
-
-	public void setUpTrainingSet(){
-		
-	}
 	
-	public void setUpTestSet(){
+	/**
+	 * make the training_set
+	 * @param features
+	 */
+	private void setUpTrainingSet(Map<String, Integer> features){
+		this.training_set = new MDR(features);
+
+		System.out.print("Making Training Set... \n");
+		// get Class set
+		Set<String> classNames = this.documentCollection.getClasses();
 		
-	}
-	
-	public void setUpTrainingSet(ArrayList<Feature> features){
+		// initialize the class names into the training_set
+		for(String className : classNames){
+			this.training_set.addClass(className);
+		}
 		
+		// for each class in set
+		for(String className : classNames){
+			System.out.print("class: " + className + "\n");
+			
+			// get DC_Training Set
+			Map<String, Map<String, Integer>> DC_Training_set = this.documentCollection.getDC_Training_Set(className);
+			
+			// for each docId in DC_Training_set
+			for(String docId : DC_Training_set.keySet()){
+				
+				// initialize row for the document in the MNB model
+				this.training_set.addDoc(docId, className);
+				
+				// start filling in row
+				Map<String, Integer> termsDC_Training_set = DC_Training_set.get(docId);
+				
+				// for each term in the document in the DC Training set
+				for(String term : termsDC_Training_set.keySet()){
+					
+					// check to make sure the term is in the feature set
+					if(features.containsKey(term)){
+						// add term count to the document row
+						//this.training_set.addTermCount(docId, term, termsDC_Training_set.get(term));
+						this.training_set.addTermCount(className, docId, term, termsDC_Training_set.get(term));
+					}
+				}
+			}
+		}
+		System.out.print("Finished Making Training Set \n");
 	}
 
-	public void setUpTestSet(ArrayList<Feature> features){
+	/**
+	 * make the test_set
+	 * @param features
+	 */
+	private void setUpTestSet(Map<String, Integer> features){
+		System.out.print("Making Test Set...");
+		this.test_set = new MDR(features);
 		
+		// get Class set
+		Set<String> classNames = this.documentCollection.getClasses();
+		
+		// initialize the class names into the test_set
+		for(String className : classNames){
+			this.test_set.addClass(className);
+		}
+		
+		// for each class in set
+		for(String className : classNames){
+			
+			// get DC_Training Set
+			Map<String, Map<String, Integer>> DC_Test_set = this.documentCollection.getDC_Test_Set(className);
+			
+			// for each docId in DC_Training_set
+			for(String docId : DC_Test_set.keySet()){
+				
+				// initialize row for the document in the MNB model
+				this.test_set.addDoc(docId, className);
+				
+				// start filling in row
+				Map<String, Integer> termsDC_Test_set = DC_Test_set.get(docId);
+				
+				// for each term in the document in the DC Training set
+				for(String term : termsDC_Test_set.keySet()){
+					
+					// check to make sure the term is in the feature set
+					if(features.containsKey(term)){
+						// add term count to the document row
+						//this.test_set.addTermCount(docId, term, termsDC_Test_set.get(term));
+						this.test_set.addTermCount(className, docId, term, termsDC_Test_set.get(term));
+					}
+				}
+			}
+		}
+		
+		System.out.print("Finished Making Test Set \n");
 	}
 	
 	// P(c)
@@ -137,6 +259,9 @@ public class MNBClassification{
 		return (double)this.documentCollection.getNumberOfDocsInDC_TrainingWithout_W_Labeled_C(c, w) / (double)this.documentCollection.getNumberOfDocumentsInDC_TrainingWithout_W(w);
 	}
 
+	/**
+	 * WRAPPED CLASS FEATURE
+	 */
 	@SuppressWarnings("rawtypes")
 	private class Feature implements Comparable{
 		private double score;

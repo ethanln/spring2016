@@ -1,0 +1,61 @@
+package mnb;
+
+import java.util.Map;
+import java.util.TreeMap;
+
+public class MDR{
+	// Map<DocId, MRDRow>
+	private Map<String, MDRRow> table;
+
+	public MDR(){
+		this.table = new TreeMap<String, MDRRow>();
+	}
+
+	public void addDoc(String docId, String className, Map<String, Integer> features){
+		this.table.put(docId, new MDRRow(className));
+	}
+
+	public void addTerm(String docId, String term){
+		for(String key : this.table.keySet()){
+			MDRRow row = this.table.get(key);
+			row.addTerm(term);
+
+			this.table.put(key, row);
+		}
+
+		MDRRow row = this.table.get(docId);
+		row.incrementTermFrequency(term);
+		this.table.put(docId, row);
+	}
+
+	public MDRRow getRow(String docId){
+		return this.table.get(docId);
+	}
+
+	private class MDRRow{
+		// Map<term, frequency>
+		private Map<String, Integer> termFrequency;
+		private String className;
+
+		public MDRRow(String _className){
+			this.className = _className;
+			this.termFrequency = new TreeMap<String, Integer>();
+		}
+
+		public void addTerm(String term){
+		 	if(!this.termFrequency.containsKey(term)){
+		 		this.termFrequency.put(term, 0);
+		 	}
+		}
+
+		public void incrementTermFrequency(String term){
+		 	int count = this.termFrequency.get(term);
+		 	count++;
+		 	this.termFrequency.put(term, count);
+		}
+
+		public Map<String, Integer> getRow(){
+			return this.termFrequency;
+		}
+	}
+}

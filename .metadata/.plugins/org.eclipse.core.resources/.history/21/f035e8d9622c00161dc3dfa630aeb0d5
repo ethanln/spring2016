@@ -1,0 +1,7 @@
+package mnb;
+
+public class MNBProbability {
+	public Map<String, Map<String, Double>> computeWordProbability(MDR training_set){
+		
+	}
+}

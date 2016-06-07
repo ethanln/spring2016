@@ -1,58 +1,120 @@
 package mnb;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class MDR{
-	// Map<DocId, MRDRow>
-	/*private Map<String, MDRRow> matrix;
 
-	public MDR(){
-		this.matrix = new TreeMap<String, MDRRow>();
+	// Map<class, Map<Docid, Row>>  WHAT DO I DO ABOUT DOCUMENTS WITH THE SAME ID FROM TWO DIFFERENT CLASSES
+	private Map<String, Map<String, MDRRow>> table;
+	// Map<term, indexPosition>
+	private Map<String, Integer> features;
+	// Map<class, termCount>
+	private Map<String, Integer> numberOfTermsInClass;
+	
+	private Set<String> distinctTermsOfSet;
+
+	public MDR(Map<String, Integer> _features){
+		this.table = new TreeMap<String, Map<String, MDRRow>>();
+		this.features = _features;
+		this.numberOfTermsInClass = new TreeMap<String, Integer>();
+		this.distinctTermsOfSet = new TreeSet<String>();
+	}
+	
+	public void addClass(String className){
+		this.table.put(className, new TreeMap<String, MDRRow>());
+		this.numberOfTermsInClass.put(className, 0);
 	}
 
-	public addDoc(String docId, String class){
-		this.matrix.put(docId, new MDRRow(class));
+	public void addDoc(String docId, String className){
+		Map<String, MDRRow> classTable = this.table.get(className);
+		classTable.put(docId, new MDRRow(features.size()));
+		this.table.put(className, classTable);
 	}
 
-	public void addTerm(String docId, String term){
-		for(String key : this.matrix.getKeySet()){
-			MDRRow row = this.matrix.get(key);
-			row.addTerm(term);
-
-			this.matrix.put(key, row);
+	public void addTermCount(String className, String docId, String term, int amount){
+		
+		// make sure class name exists as key in table and the term is in the feature set
+		if(this.table.containsKey(className) && this.features.containsKey(term)){
+			
+			// get table affiliated with the class
+			Map<String, MDRRow> classTable = this.table.get(className);
+			
+			// make sure docId exists in the class table
+			if(classTable.containsKey(docId)){
+				// get row of specified id
+				MDRRow row = classTable.get(docId);
+				
+				// increment count
+				row.incrementTermFrequency(this.features.get(term), amount);
+				
+				// insert row back in class table
+				classTable.put(docId, row);
+				
+				// update the number of terms in class
+				this.updateTermCountInClass(className);
+				
+				// update distinct term set
+				this.distinctTermsOfSet.add(term);
+			}
+			// insert class table back into table
+			this.table.put(className, classTable);
 		}
-
-		MDRRow row = this.matrix.get(docId);
-		row.incrementTermFrequency(term);
-		this.matrix.put(docId, row);
 	}
-
-	public MDRRow getRow(String docId){
-		return this.matrix.get(docId);
+	
+	private void updateTermCountInClass(String c){
+		int count = this.numberOfTermsInClass.get(c);
+		count++;
+		this.numberOfTermsInClass.put(c, count);
+	}
+	
+	public MDRRow getRow(String className, String docId){
+		return this.table.get(className).get(docId);
+	}
+	
+	public Map<String, Integer> getWords(){
+		return this.features;
+	}
+	
+	public Set<String> getClasses(){
+		return this.table.keySet();
+	}
+	
+	public double getNumberOfTermsInC(String c){
+		return this.numberOfTermsInClass.get(c);
+	}
+	
+	public double getNumberOfDistinctTermsInSet(){
+		return this.distinctTermsOfSet.size();
+	}
+	
+	public Set<String> getDistinctTermsInSet(){
+		return this.distinctTermsOfSet;
+	}
+	
+	public double getCountOfWInC(String w, String c){
+		int count = 0;
+		for(String document : this.table.get(c).keySet()){
+			count += this.table.get(c).get(document).getCount(this.features.get(w));
+		}
+		return count;
 	}
 
 	private class MDRRow{
-		// Map<term, frequency>
-		private Map<String, Integer> termFrequency;
-		private String class;
 
-		public MDRRow(String _class){
-			this.class = _class;
-			this.termFrequency = new TreeMap<String, Integer>();
+		private int[] termFrequency;
+
+		public MDRRow(int size){
+			this.termFrequency = new int[size];
 		}
 
-		public void addTerm(String term){
-		 	if(!this.termFrequency.containsKey(term)){
-		 		this.termFrequency.put(term, 0);
-		 	}
+		public void incrementTermFrequency(int index, int amount){
+			this.termFrequency[index] += amount;
 		}
 
-		public void incrementTermFrequency(String term){
-		 	int count = this.termFrequency.get(term);
-		 	count++;
-		 	this.termFrequency.put(term, count);
+		public int getCount(int index){
+			return this.termFrequency[index];
 		}
-
-		public Map<String, Integer> getRow(){
-			return this.termFrequency;
-		}
-	}*/
+	}
 }

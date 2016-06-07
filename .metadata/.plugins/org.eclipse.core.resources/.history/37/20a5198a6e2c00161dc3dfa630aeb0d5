@@ -1,0 +1,108 @@
+package mnb;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+public class MDR{
+
+	// Map<class, Map<Docid, Row>>  WHAT DO I DO ABOUT DOCUMENTS WITH THE SAME ID FROM TWO DIFFERENT CLASSES
+	private Map<String, Map<String, MDRRow>> table;
+	// Map<term, indexPosition>
+	private Map<String, Integer> features;
+	// Map<class, termCount>
+	private Map<String, Integer> numberOfTermsInClass;
+	
+	private Set<String> distinctTermsOfSet;
+
+	public MDR(Map<String, Integer> _features){
+		this.table = new TreeMap<String, Map<String, MDRRow>>();
+		this.features = _features;
+		this.numberOfTermsInClass = new TreeMap<String, Integer>();
+		this.numberOfTermsOfSet = new TreeSet<String>();
+	}
+	
+	public void addClass(String className){
+		this.table.put(className, new TreeMap<String, MDRRow>());
+		this.numberOfTermsInClass.put(className, 0);
+	}
+
+	public void addDoc(String docId, String className){
+		Map<String, MDRRow> classTable = this.table.get(className);
+		classTable.put(docId, new MDRRow(features.size()));
+		this.table.put(className, classTable);
+	}
+
+	public void addTermCount(String className, String docId, String term, int amount){
+		
+		// make sure class name exists as key in table and the term is in the feature set
+		if(this.table.containsKey(className) && this.features.containsKey(term)){
+			
+			// get table affiliated with the class
+			Map<String, MDRRow> classTable = this.table.get(className);
+			
+			// make sure docId exists in the class table
+			if(classTable.containsKey(docId)){
+				// get row of specified id
+				MDRRow row = classTable.get(docId);
+				
+				// increment count
+				row.incrementTermFrequency(this.features.get(term), amount);
+				
+				// insert row back in class table
+				classTable.put(docId, row);
+				
+				// update the number of terms in class
+				this.updateTermCountInClass(className);
+			}
+			// insert class table back into table
+			this.table.put(className, classTable);
+		}
+	}
+	
+	private void updateTermCountInClass(String c){
+		int count = this.numberOfTermsInClass.get(c);
+		count++;
+		this.numberOfTermsInClass.put(c, count);
+	}
+	
+	public MDRRow getRow(String className, String docId){
+		return this.table.get(className).get(docId);
+	}
+	
+	public Map<String, Integer> getWords(){
+		return this.features;
+	}
+	
+	public Set<String> getClasses(){
+		return this.table.keySet();
+	}
+	
+	public double getNumberOfTermsInC(String c){
+		return this.numberOfTermsInClass.get(c);
+	}
+	
+	public double getCountOfWInC(String w, String c){
+		int count = 0;
+		for(String document : this.table.get(c).keySet()){
+			count += this.table.get(c).get(document).getCount(this.features.get(w));
+		}
+		return count;
+	}
+
+	private class MDRRow{
+
+		private int[] termFrequency;
+
+		public MDRRow(int size){
+			this.termFrequency = new int[size];
+		}
+
+		public void incrementTermFrequency(int index, int amount){
+			this.termFrequency[index] += amount;
+		}
+
+		public int getCount(int index){
+			return this.termFrequency[index];
+		}
+	}
+}

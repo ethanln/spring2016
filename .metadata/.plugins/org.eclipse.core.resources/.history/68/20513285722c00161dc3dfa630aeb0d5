@@ -1,0 +1,57 @@
+package mnb;
+
+import java.util.Map;
+import java.util.TreeMap;
+
+public class MNBProbability {
+
+	public MNBProbability(){
+		
+	}
+	
+	public Map<String, Map<String, Double>> computeWordProbability(MDR training_set){
+		// Map<class, Map<word, probability>>
+		Map<String, Map<String, Double>> WordProbabilities = new TreeMap<String, Map<String, Double>>();
+		
+		for(String c : training_set.getClasses()){
+			WordProbabilities.put(c, new TreeMap<String, Double>());
+			for(String w : training_set.getDistinctTermsInSet()){
+				this.getWordProbability(w, c, training_set);
+			}
+		}
+		
+		return WordProbabilities;
+	}
+	
+	public Map<String, Map<String, Double>> computeClassProbability(MDR training_set){
+		Map<String, Map<String, Double>> ClassProbabilities = new TreeMap<String, Map<String, Double>>();
+
+		return ClassProbabilities;
+	}
+	
+	/**
+	 * retrieves the probability value of a word in a particular class, which includes the probability value
+	 * of each word not seen during the training phase of MNB.  Stored in WordProbabilities
+	 * P(W|C)
+	 * @param w
+	 * @param c
+	 * @return
+	 */
+	public double getWordProbability(String w, String c, MDR training_set){	
+		double probabilityOfW_in_C = 0.0;
+		probabilityOfW_in_C += (training_set.getCountOfWInC(w, c) + 1.0) / 
+				(training_set.getNumberOfTermsInC(c) + training_set.getNumberOfDistinctTermsInSet());
+		
+		return probabilityOfW_in_C;
+	}
+	
+	/**
+	 * retrieves the probability value of a natural class, which is stored in ClassProbabilities
+	 * @param c
+	 * @return
+	 */
+	public double getClassProbability(String c){		
+		double probabilityOfC = 0.0;
+		return probabilityOfC;
+	}
+}

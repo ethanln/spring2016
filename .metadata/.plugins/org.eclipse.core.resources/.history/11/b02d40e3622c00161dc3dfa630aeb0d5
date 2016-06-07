@@ -1,0 +1,10 @@
+package mnb;
+
+import java.util.Map;
+
+public class MNBProbability {
+	
+	public Map<String, Map<String, Double>> computeWordProbability(MDR training_set){
+		Map<String, Map<String, Double>> computedWordProbabilities = new TreeMap<String, Map<String, Double>>();
+	}
+}

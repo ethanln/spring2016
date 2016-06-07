@@ -277,6 +277,20 @@ public class DC {
 		}
 		return count;
 	}
+	
+	public Map<String, Map<String, Integer>> getDC_Training_Set(String className){
+		if(this.partitionedDCs.containsKey(className)){
+			return this.partitionedDCs.get(className).getDC_Training_Set();
+		}
+		return new TreeMap<String, Map<String, Integer>>();
+	}
+	
+	public Map<String, Map<String, Integer>> getDC_Test_Set(String className){
+		if(this.partitionedDCs.containsKey(className)){
+			return this.partitionedDCs.get(className).getDC_Test_Set();
+		}
+		return new TreeMap<String, Map<String, Integer>>();
+	}
 
 
 	
@@ -377,6 +391,7 @@ public class DC {
 		* otherwise include it in the test set.
 		*/
 		public int addDocument(String docId){
+			// TODO: probably should make it 50/50 randomization
 			if(randInt(1, 10) < 9){
 				return this.addDocToTrainingSet(docId);
 			}
@@ -414,7 +429,15 @@ public class DC {
 				return 1;
 			}
 		}
+		
+		public Map<String, Map<String, Integer>> getDC_Training_Set(){
+			return this.DC_TrainingSet;
+		}
 
+		public Map<String, Map<String, Integer>> getDC_Test_Set(){
+			return this.DC_TestSet;
+		}
+		
 		/**
 		 * Returns a psuedo-random number between min and max, inclusive.
 		 * The difference between min and max can be at most

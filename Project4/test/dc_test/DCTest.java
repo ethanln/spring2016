@@ -20,7 +20,8 @@ public class DCTest {
 		
 		MNBClassification mnb = new MNBClassification(800, 200);
 		mnb.init("20NG");
-		mnb.featureSelect(6200);
+		mnb.doClassification();
+		//mnb.featureSelect(6200);
 	}
 
 }
